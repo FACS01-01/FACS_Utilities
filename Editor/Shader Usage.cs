@@ -1,0 +1,108 @@
+﻿//code by FACS01
+
+using UnityEditor;
+using UnityEngine;
+using System.Collections.Generic;
+using System;
+
+namespace FACS01.Utilities
+{
+    public class ShaderUsage : EditorWindow
+    {
+        public GameObject source = null;
+        private static string sourcename = "";
+        private static bool _bHaveRun = false;
+        private Vector2 scrollPos;
+        private static List<string> all_shaders;
+        private static List<List<string>> mats_with_shader;
+        private static int shaderCount;
+
+        [MenuItem("Tools/FACS Utilities/Shaders Used by Object")]
+        public static void ShowWindow()
+        {
+            GetWindow(typeof(ShaderUsage), false, "Shaders Used by Object", true);
+        }
+
+        public void OnGUI()
+        {
+            GUIStyle newstyle = new GUIStyle(GUI.skin.GetStyle("HelpBox"));
+            newstyle.richText = true;
+            newstyle.fontSize = 13;
+            newstyle.alignment = TextAnchor.MiddleCenter;
+            source = (GameObject)EditorGUILayout.ObjectField(source, typeof(UnityEngine.Object), true);
+
+            if (GUILayout.Button("Search!", newstyle))
+            {
+                if (source == null)
+                    ShowNotification(new GUIContent("No object selected for searching"));
+                else
+                {
+                    runAlg();
+                }
+            }
+            if (!_bHaveRun) return;
+
+            newstyle.alignment = TextAnchor.MiddleLeft;
+            EditorGUILayout.TextArea($"<color=cyan><b>{shaderCount}</b> different shaders</color> were found in <color=green>{sourcename}</color> :", newstyle);
+            scrollPos = EditorGUILayout.BeginScrollView(scrollPos);
+
+            for (int i = 0; i < all_shaders.Count; i++)
+            {
+                string temp = String.Join("\n\t", mats_with_shader[i]);
+                EditorGUILayout.TextArea($"<color=cyan><b>{all_shaders[i]}</b></color>\n\t{temp}", newstyle);
+            }
+            EditorGUILayout.EndScrollView();
+        }
+        void OnDestroy()
+        {
+            source = null;
+            sourcename = "";
+            _bHaveRun = false;
+        }
+        public void runAlg()
+        {
+            sourcename = source.name;
+
+            List<Material> all_materials = new List<Material>();
+            Renderer[] all_renderers = source.GetComponentsInChildren<Renderer>(true);
+            foreach (Renderer rend in all_renderers)
+            {
+                foreach (Material mat in rend.sharedMaterials)
+                {
+                    if (!all_materials.Contains(mat) && mat != null)
+                    {
+                        all_materials.Add(mat);
+                    }
+                }
+            }
+            all_shaders = new List<string>();
+            mats_with_shader = new List<List<string>>();
+            foreach (Material mat in all_materials)
+            {
+                if (!all_shaders.Contains(mat.shader.name))
+                {
+                    all_shaders.Add(mat.shader.name);
+                    mats_with_shader.Add(new List<string> { mat.shader.name, mat.name });
+                }
+                else
+                {
+                    if (!mats_with_shader[all_shaders.IndexOf(mat.shader.name)].Contains(mat.name))
+                    {
+                        mats_with_shader[all_shaders.IndexOf(mat.shader.name)].Add(mat.name);
+                    }
+                }
+            }
+            all_shaders.Sort();
+            mats_with_shader.Sort((a, b) => a[0].CompareTo(b[0]));
+            shaderCount = all_shaders.Count;
+
+            for (int i=0; i < shaderCount; i++)
+            {
+                mats_with_shader[i].RemoveAt(0);
+                mats_with_shader[i].Sort();
+            }
+
+            _bHaveRun = true;
+        }
+    }
+}
