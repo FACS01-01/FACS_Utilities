@@ -12,6 +12,7 @@ namespace FACS01.Utilities
     {
         public GameObject source;
         public AnimatorController animContr;
+        public AnimatorOverrideController animContrOR;
 
         private readonly string[] brokenPropertyNameKeys = { "blendShape.", "typetree_", "script_", "ParticleSystem_", "material." };
 
@@ -44,26 +45,34 @@ namespace FACS01.Utilities
             newstyle.fontSize = 13;
             newstyle.wordWrap = true;
 
-            EditorGUILayout.LabelField($"<color=cyan><b>Fix Animations Missing Paths</b></color>\n\nScans Animations inside the selected Animator Controller," +
-                $" and tries to repair missing paths, comparing them to the selected GameObject's hierarchy.\n\n" +
+            EditorGUILayout.LabelField($"<color=cyan><b>Fix Animations Missing Paths</b></color>\n\nScans Animations inside the selected Animator Controller" +
+                $" or Animator Override, and tries to repair missing paths, comparing them to the selected GameObject's hierarchy.\n\n" +
                 $"This will overwrite all modified Animations, but can be reverted with Undo.\n", newstyle);
 
             EditorGUILayout.BeginHorizontal();
             source = (GameObject)EditorGUILayout.ObjectField(source, typeof(UnityEngine.Object), true, GUILayout.Height(40));
-            animContr = (AnimatorController)EditorGUILayout.ObjectField(animContr, typeof(AnimatorController), true, GUILayout.Height(40));
+            EditorGUILayout.BeginVertical();
+            int height;
+            if (animContr == null && animContrOR == null) height = 20; else height = 40;
+            if (animContrOR == null) animContr = (AnimatorController)EditorGUILayout.ObjectField(animContr, typeof(AnimatorController), true, GUILayout.Height(height));
+            if (animContr == null) animContrOR = (AnimatorOverrideController)EditorGUILayout.ObjectField(animContrOR, typeof(AnimatorOverrideController), true, GUILayout.Height(height));
+            EditorGUILayout.EndVertical();
             EditorGUILayout.EndHorizontal();
 
             newstyle.alignment = TextAnchor.MiddleCenter;
             if (GUILayout.Button("Run Fix!", newstyle, GUILayout.Height(40)))
             {
-                if (source == null || animContr == null)
+                if (source != null && (animContr != null || animContrOR != null))
+                {
+                    RunFix();
+                }
+                else
                 {
                     ShowNotification(new GUIContent("Empty fields?"));
                     NullVars();
                 }
-                else RunFix();
             }
-            if (results != null)
+            if (results != null && results != "")
             {
                 newstyle.alignment = TextAnchor.MiddleLeft;
                 EditorGUILayout.LabelField(results, newstyle);
@@ -85,8 +94,10 @@ namespace FACS01.Utilities
 
             Gen_ComponentLists(sourceT);
 
-            var allAnimClips = animContr.animationClips.Distinct();
-
+            IEnumerable<AnimationClip> allAnimClips;
+            if (animContr != null) allAnimClips = animContr.animationClips.Distinct();
+            else allAnimClips = animContrOR.animationClips.Distinct();
+            
             allAnimClipsCB = new List<(AnimationClip, EditorCurveBinding)>();
             foreach (AnimationClip animClip in allAnimClips)
             {
@@ -156,8 +167,19 @@ namespace FACS01.Utilities
                 foreach (EditorCurveBinding cB in l_cB_uniques)
                 {
                     props.Add(cB.propertyName);
-                    if (cB.propertyName.StartsWith("blendShape.")) tmp3.Add((uint)Animator.StringToHash(cB.propertyName.Substring(11)), cB.propertyName);
-                    else tmp3.Add((uint)Animator.StringToHash(cB.propertyName), cB.propertyName);
+                    uint addkey;
+                    if (cB.propertyName.StartsWith("blendShape."))
+                    {
+                        addkey = (uint)Animator.StringToHash(cB.propertyName.Substring(11));
+                    }
+                    else
+                    {
+                        addkey = (uint)Animator.StringToHash(cB.propertyName);
+                    }
+                    if (!tmp3.ContainsKey(addkey))
+                    {
+                        tmp3.Add(addkey, cB.propertyName);
+                    }
                 }
                 if (l_cB_1type[0].type.ToString() == "UnityEngine.Transform")
                 {//transform component, weird angles hax
@@ -207,14 +229,14 @@ namespace FACS01.Utilities
                 {
                     // hashed path in GO doesnt exist
                     results_int[1]++;
-                    Debug.LogWarning($"<color=cyan>AnimationFixer</color>: <color=yellow>Selected GameObject doesn't have hashed path:</color> " + cBpath);
+                    Debug.LogWarning($"<color=cyan>AnimationFixer</color>: <color=yellow>Selected GameObject doesn't have hashed path:</color> {cBpath}<color=yellow>. AnimationClip:</color> {ac.name}");
                 }
             }
             else
             {
                 // path in GO doesnt exist
                 results_int[2]++;
-                Debug.LogWarning($"<color=cyan>AnimationFixer</color>: <color=yellow>Selected GameObject doesn't have path:</color> " + cBpath);
+                Debug.LogWarning($"<color=cyan>AnimationFixer</color>: <color=yellow>Selected GameObject doesn't have path:</color> {cBpath}<color=yellow>. AnimationClip:</color> {ac.name}");
             }
         }
         private void AnalizeType(AnimationClip ac, EditorCurveBinding cB, string newPath)
@@ -252,7 +274,7 @@ namespace FACS01.Utilities
             {
                 // type not found in path
                 results_int[4]++;
-                Debug.LogWarning($"<color=cyan>AnimationFixer</color>: <color=yellow><b>{cBtype}</b> component not found in path:</color> " + newPath);
+                Debug.LogWarning($"<color=cyan>AnimationFixer</color>: <color=yellow><b>{cBtype}</b> component not found in path:</color> {newPath}<color=yellow>. AnimationClip:</color> {ac.name}");
             }
         }
         private void AnalizeProp(AnimationClip ac, EditorCurveBinding cB, string newPath, Type newType)
@@ -286,7 +308,7 @@ namespace FACS01.Utilities
                     {
                         // property name not present
                         results_int[5]++;
-                        Debug.LogWarning($"<color=cyan>AnimationFixer</color>: {newType} <color=yellow>property name</color> {cBpropName} <color=yellow>not found, at path:</color> {newPath}");
+                        Debug.LogWarning($"<color=cyan>AnimationFixer</color>: {newType} <color=yellow>property name</color> {cBpropName} <color=yellow>not found, at path:</color> {newPath}<color=yellow>. AnimationClip:</color> {ac.name}");
                         return;
                     }
                 }
@@ -294,7 +316,7 @@ namespace FACS01.Utilities
 
             // unknown property name format
             results_int[6]++;
-            Debug.LogWarning($"<color=cyan>AnimationFixer</color>: <color=yellow>Unknown</color> {newType} <color=yellow>property name</color> {cBpropName} <color=yellow>at path:</color> {newPath}");
+            Debug.LogWarning($"<color=cyan>AnimationFixer</color>: <color=yellow>Unknown</color> {newType} <color=yellow>property name</color> {cBpropName} <color=yellow>at path:</color> {newPath}<color=yellow>. AnimationClip:</color> {ac.name}");
         }
         private void SetCurveFix(AnimationClip ac, EditorCurveBinding cB, System.Type newtype, string newpath, string newpropertyName)
         {
