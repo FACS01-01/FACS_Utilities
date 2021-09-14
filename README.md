@@ -1,5 +1,5 @@
 # FACS_Utilities
-Tools to repair common error on Unity/VRChat files
+Tools to repair common errors on Unity/VRChat files
 
 Features:
 
