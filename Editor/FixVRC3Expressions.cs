@@ -12,7 +12,8 @@ namespace FACS01.Utilities
         public DefaultAsset folderWithExpressions;
 
         private readonly string[] searchFiles = { "VRCExpressionParameters", "VRCExpressionsMenu" };
-        private readonly string[] searchIn = { "Assets/VRCSDK" };
+        
+    private readonly string[] searchIn = { "Assets/VRCSDK" };
 
         private Dictionary<string, (string, string)> searchFiles_IDs;
         private int fixCount;
@@ -64,19 +65,24 @@ namespace FACS01.Utilities
         private void Fix(string path)
         {
             string[] arrLine = File.ReadAllLines(path);
-            string scriptName = arrLine.First(o => o.StartsWith("  m_Name: "));
             int mScriptIndex = ArrayUtility.IndexOf(arrLine, arrLine.First(o => o.StartsWith("  m_Script: ")));
-            foreach (var goodFile in searchFiles)
+            if (arrLine.Contains("  parameters:"))
             {
-                if (scriptName.Contains(goodFile))
-                {
-                    string fileGUID = searchFiles_IDs[goodFile].Item1;
-                    string fileID = searchFiles_IDs[goodFile].Item2;
-                    arrLine[mScriptIndex] = $"  m_Script: {{fileID: {fileID}, guid: {fileGUID}, type: 3}}";
-                    File.WriteAllLines(path, arrLine);
-                    fixCount++;
-                    break;
-                }
+                string goodFile = "VRCExpressionParameters";
+                string fileGUID = searchFiles_IDs[goodFile].Item1;
+                string fileID = searchFiles_IDs[goodFile].Item2;
+                arrLine[mScriptIndex] = $"  m_Script: {{fileID: {fileID}, guid: {fileGUID}, type: 3}}";
+                File.WriteAllLines(path, arrLine);
+                fixCount++;
+            }
+            else if (arrLine.Contains("  controls:"))
+            {
+                string goodFile = "VRCExpressionsMenu";
+                string fileGUID = searchFiles_IDs[goodFile].Item1;
+                string fileID = searchFiles_IDs[goodFile].Item2;
+                arrLine[mScriptIndex] = $"  m_Script: {{fileID: {fileID}, guid: {fileGUID}, type: 3}}";
+                File.WriteAllLines(path, arrLine);
+                fixCount++;
             }
         }
         private void Run()
