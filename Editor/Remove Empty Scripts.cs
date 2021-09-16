@@ -1,78 +1,106 @@
 ﻿using UnityEditor;
 using UnityEngine;
+using System;
 
 namespace FACS01.Utilities
 {
-    public class FindMissingScriptsRecursivelyAndRemove : EditorWindow 
+    public class RemoveMissingScripts : EditorWindow 
     {
         public GameObject source;
-        private static string sourcename;
-        private static int _goCount;
-        private static int _missingCount;
+        private static int GameObjectsScanned;
+        private static int missingScriptsCount;
  
-        private static bool _bHaveRun;
- 
-        [MenuItem("Tools/FACS Utilities/Find Missing Scripts And Remove")]
+        private static string results;
+
+        [MenuItem("Tools/FACS Utilities/Remove Missing Scripts")]
         public static void ShowWindow()
         {
-            GetWindow(typeof(FindMissingScriptsRecursivelyAndRemove), false, "Find Missing Scripts And Remove", true);
+            EditorWindow editorWindow = GetWindow(typeof(RemoveMissingScripts), false, "Remove Missing Scripts", true);
+            editorWindow.autoRepaintOnSceneChange = true;
         }
- 
         public void OnGUI()
         {
             GUIStyle newstyle = new GUIStyle(GUI.skin.GetStyle("HelpBox"));
             newstyle.richText = true;
             newstyle.fontSize = 13;
+            newstyle.wordWrap = true;
 
-            source = (GameObject)EditorGUILayout.ObjectField(source, typeof(UnityEngine.Object), true);
+            EditorGUILayout.LabelField($"<color=cyan><b>Remove Missing Scripts</b></color>\n\nScans the selected GameObject" +
+                $" and tries to delete any missing scripts inside it's hierarchy.\n" +
+                $"After that, if the selected GameObject is a Prefab, it will be unpacked completely.\n\n" +
+                $"The fix can be Undone, but it will give errors on Console.\n", newstyle);
 
-            if (GUILayout.Button("Scan!") && source != null)
+            source = (GameObject)EditorGUILayout.ObjectField(source, typeof(GameObject), true, GUILayout.Height(40));
+
+            newstyle.alignment = TextAnchor.MiddleCenter;
+            if (GUILayout.Button("Run!", newstyle, GUILayout.Height(40)))
             {
-                FindInSelected(source);
+                if (source != null)
+                {
+                    FindInSelected(source);
+                }
+                else
+                {
+                    ShowNotification(new GUIContent("Empty selection?"));
+                    NullVars();
+                }
             }
- 
-            if (!_bHaveRun) return;
-
-            EditorGUILayout.TextArea($"Selected Object: <color=green>{sourcename}</color>", newstyle);
-
-            if (_goCount<=0) EditorGUILayout.TextField($"No Game Objects Scanned.", newstyle);
-            else EditorGUILayout.TextArea($"{_goCount} GameObjects Scanned.\n{_missingCount} Scripts Deleted.", newstyle);
+            if (results != null && results != "")
+            {
+                newstyle.alignment = TextAnchor.MiddleLeft;
+                EditorGUILayout.LabelField(results, newstyle);
+            }
         }
         
         private static void FindInSelected(GameObject src)
         {
-            _goCount = 0;
-            _missingCount = 0;
-            sourcename = src.name;
+            GameObjectsScanned = 0;
+            missingScriptsCount = 0;
+            results = "";
 
             FindInGo(src);
- 
-            _bHaveRun = true;
-            
-            AssetDatabase.SaveAssets();
+
+            if (missingScriptsCount > 0)
+            {
+                try
+                {
+                    PrefabUtility.UnpackPrefabInstance(src, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
+                }
+                catch (ArgumentException) { }
+            }
+
+            GenerateResults();
         }
-		
         private static void FindInGo(GameObject g)
         {
-            _goCount++;
+            GameObjectsScanned++;
          
             var tempCount = GameObjectUtility.GetMonoBehavioursWithMissingScriptCount(g);
 			
 			if (tempCount > 0) {
-				var s = g.name;
-				var t = g.transform;
-				while (t.parent != null) {
-					s = t.parent.name +"/"+s;
-					t = t.parent;
-				}
-				
-				_missingCount = _missingCount + GameObjectUtility.RemoveMonoBehavioursWithMissingScript(g);
+                Undo.RegisterCompleteObjectUndo(g, "Remove Empty Scripts");
+                missingScriptsCount += GameObjectUtility.RemoveMonoBehavioursWithMissingScript(g);
 			}
             
             foreach (Transform childT in g.transform)
             {
                 FindInGo(childT.gameObject);
             }
+        }
+        private static void GenerateResults()
+        {
+            results = $"Results:\n";
+            results += $"   • <color=green>Child GameObjects scanned:</color> {GameObjectsScanned}\n";
+            results += $"   • <color=green>Missing scripts deleted:</color> {missingScriptsCount}\n";
+        }
+        private void OnDestroy()
+        {
+            source = null;
+            NullVars();
+        }
+        void NullVars()
+        {
+            results = null;
         }
     }
 }
