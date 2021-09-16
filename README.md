@@ -7,7 +7,7 @@ Features:
 	
 	- Fix Animations
 	
-	- Remove Empty Scripts
+	- Remove Missing Scripts
 	
 	- Shader Detector
 	
