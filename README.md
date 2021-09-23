@@ -11,4 +11,8 @@ Features:
 	
 	- Shader Detector
 	
+	- Fix VRC3 Avatar Descriptor
+	
 	- Fix VRC3 Expressions
+	
+	- Get Latest VRC SDK
