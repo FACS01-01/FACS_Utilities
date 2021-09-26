@@ -170,11 +170,15 @@ namespace FACS01.Utilities
                     uint addkey;
                     if (cB.propertyName.StartsWith("blendShape."))
                     {
-                        addkey = (uint)Animator.StringToHash(cB.propertyName.Substring(11));
+                        addkey = (uint)Animator.StringToHash(cB.propertyName.Substring(11)) & 0xFFFFFFF;
+                    }
+                    else if (cB.propertyName.StartsWith("material."))
+                    {
+                        addkey = (uint)Animator.StringToHash(cB.propertyName.Substring(9)) & 0xFFFFFFF;
                     }
                     else
                     {
-                        addkey = (uint)Animator.StringToHash(cB.propertyName);
+                        addkey = (uint)Animator.StringToHash(cB.propertyName) & 0xFFFFFFF;
                     }
                     if (!tmp3.ContainsKey(addkey))
                     {
@@ -184,11 +188,11 @@ namespace FACS01.Utilities
                 if (l_cB_1type[0].type.ToString() == "UnityEngine.Transform")
                 {//transform component, weird angles hax
                     props.Add("localEulerAnglesRaw.x");
-                    tmp3.Add((uint)Animator.StringToHash("localEulerAnglesRaw.x"), "localEulerAnglesRaw.x");
+                    tmp3.Add((uint)Animator.StringToHash("localEulerAnglesRaw.x") & 0xFFFFFFF, "localEulerAnglesRaw.x");
                     props.Add("localEulerAnglesRaw.y");
-                    tmp3.Add((uint)Animator.StringToHash("localEulerAnglesRaw.y"), "localEulerAnglesRaw.y");
+                    tmp3.Add((uint)Animator.StringToHash("localEulerAnglesRaw.y") & 0xFFFFFFF, "localEulerAnglesRaw.y");
                     props.Add("localEulerAnglesRaw.z");
-                    tmp3.Add((uint)Animator.StringToHash("localEulerAnglesRaw.z"), "localEulerAnglesRaw.z");
+                    tmp3.Add((uint)Animator.StringToHash("localEulerAnglesRaw.z") & 0xFFFFFFF, "localEulerAnglesRaw.z");
                 }
 
                 tmp4.Add(tmp3);
@@ -299,7 +303,7 @@ namespace FACS01.Utilities
             {
                 if (cBpropName.StartsWith(key) && uint.TryParse(cBpropName.Substring(key.Length), out uint hash))
                 {
-                    if (nPath_nType_Hashes_Props[nPath][nType].TryGetValue(hash, out string newPropName))
+                    if (nPath_nType_Hashes_Props[nPath][nType].TryGetValue(hash & 0xFFFFFFF, out string newPropName))
                     {
                         SetCurveFix(ac, cB, newType, newPath, newPropName);
                         return;
