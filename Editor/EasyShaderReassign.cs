@@ -248,8 +248,16 @@ namespace FACS01.Utilities
                         }
                         if (!addedtolist)
                         {
-                            OldShaders.Add((GUID, "Unknown", new List<(Material, string)> { (mat, Path.GetFileNameWithoutExtension(matpath)) }));
-                            addedtolist = true;
+                            if (OriginalShader != "")
+                            {
+                                OldShaders.Add(("NoGUID", OriginalShader, new List<(Material, string)> { (mat, Path.GetFileNameWithoutExtension(matpath)) }));
+                                addedtolist = true;
+                            }
+                            else
+                            {
+                                OldShaders.Add((GUID, "Unknown Shader", new List<(Material, string)> { (mat, Path.GetFileNameWithoutExtension(matpath)) }));
+                                addedtolist = true;
+                            }
                         }
                     }
 
