@@ -5,6 +5,8 @@ Features:
 
 	- Load Bundle 2019
 	
+	- Easy Shader Reassign
+	
 	- Fix Animations
 	
 	- Remove Missing Scripts
