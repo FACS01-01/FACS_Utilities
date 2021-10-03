@@ -11,9 +11,9 @@ namespace FACS01.Utilities
     {
         public DefaultAsset brokenPrefabsFolder;
 
+        private static FACSGUIStyles FacsGUIStyles;
         private readonly string[] searchFiles = { "VRCAvatarDescriptor" };
         private readonly string[] searchIn = { "Assets/VRCSDK" };
-
         private Dictionary<string, (string, string)> searchFiles_IDs;
         private int fixCount;
         private string output_print;
@@ -25,16 +25,13 @@ namespace FACS01.Utilities
         }
         public void OnGUI()
         {
-            GUIStyle newstyle = new GUIStyle(GUI.skin.GetStyle("HelpBox"));
-            newstyle.richText = true;
-            newstyle.fontSize = 13;
-            newstyle.wordWrap = true;
+            if (FacsGUIStyles == null) { FacsGUIStyles = new FACSGUIStyles(); }
+            FacsGUIStyles.helpbox.alignment = TextAnchor.MiddleCenter;
 
-            EditorGUILayout.LabelField($"<color=cyan><b>Fix VRC SDK3 Avatar Descriptor</b></color>\n\nScans the selected folder and assigns the correct scripts to broken Prefab Avatar Descriptors.\n", newstyle);
+            EditorGUILayout.LabelField($"<color=cyan><b>Fix VRC SDK3 Avatar Descriptor</b></color>\n\nScans the selected folder and assigns the correct scripts to broken Prefab Avatar Descriptors.\n", FacsGUIStyles.helpbox);
             brokenPrefabsFolder = (DefaultAsset)EditorGUILayout.ObjectField(brokenPrefabsFolder, typeof(DefaultAsset), false, GUILayout.Height(50));
-            newstyle.alignment = TextAnchor.MiddleCenter;
 
-            if (GUILayout.Button("Run!", newstyle, GUILayout.Height(40)))
+            if (GUILayout.Button("Run!", FacsGUIStyles.button, GUILayout.Height(40)))
             {
                 Debug.Log("AVATAR DESCRIPTOR FIXER BEGINS");
 
@@ -57,8 +54,8 @@ namespace FACS01.Utilities
             }
             if (output_print != null && output_print != "")
             {
-                newstyle.alignment = TextAnchor.MiddleLeft;
-                EditorGUILayout.LabelField(output_print, newstyle);
+                FacsGUIStyles.helpbox.alignment = TextAnchor.MiddleLeft;
+                EditorGUILayout.LabelField(output_print, FacsGUIStyles.helpbox);
             }
         }
         private void Fix(string path)
@@ -129,6 +126,7 @@ namespace FACS01.Utilities
         {
             output_print = null;
             searchFiles_IDs = null;
+            FacsGUIStyles = null;
         }
     }
 }

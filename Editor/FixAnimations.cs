@@ -14,6 +14,8 @@ namespace FACS01.Utilities
         public AnimatorController animContr;
         public AnimatorOverrideController animContrOR;
 
+        private static FACSGUIStyles FacsGUIStyles;
+
         private readonly string[] brokenPropertyNameKeys = { "blendShape.", "typetree_", "script_", "ParticleSystem_", "material." };
 
         private Transform sourceT;
@@ -40,14 +42,12 @@ namespace FACS01.Utilities
         }
         public void OnGUI()
         {
-            GUIStyle newstyle = new GUIStyle(GUI.skin.GetStyle("HelpBox"));
-            newstyle.richText = true;
-            newstyle.fontSize = 13;
-            newstyle.wordWrap = true;
+            if (FacsGUIStyles == null) { FacsGUIStyles = new FACSGUIStyles(); }
+            FacsGUIStyles.helpbox.alignment = TextAnchor.MiddleCenter;
 
             EditorGUILayout.LabelField($"<color=cyan><b>Fix Animations Missing Paths</b></color>\n\nScans Animations inside the selected Animator Controller" +
                 $" or Animator Override, and tries to repair missing paths, comparing them to the selected GameObject's hierarchy.\n\n" +
-                $"This will overwrite all modified Animations, but can be reverted with Undo.\n", newstyle);
+                $"This will overwrite all modified Animations, but can be reverted with Undo.\n", FacsGUIStyles.helpbox);
 
             EditorGUILayout.BeginHorizontal();
             source = (GameObject)EditorGUILayout.ObjectField(source, typeof(UnityEngine.Object), true, GUILayout.Height(40));
@@ -59,8 +59,7 @@ namespace FACS01.Utilities
             EditorGUILayout.EndVertical();
             EditorGUILayout.EndHorizontal();
 
-            newstyle.alignment = TextAnchor.MiddleCenter;
-            if (GUILayout.Button("Run Fix!", newstyle, GUILayout.Height(40)))
+            if (GUILayout.Button("Run Fix!", FacsGUIStyles.button, GUILayout.Height(40)))
             {
                 if (source != null && (animContr != null || animContrOR != null))
                 {
@@ -74,8 +73,8 @@ namespace FACS01.Utilities
             }
             if (results != null && results != "")
             {
-                newstyle.alignment = TextAnchor.MiddleLeft;
-                EditorGUILayout.LabelField(results, newstyle);
+                FacsGUIStyles.helpbox.alignment = TextAnchor.MiddleLeft;
+                EditorGUILayout.LabelField(results, FacsGUIStyles.helpbox);
             }
         }
         public void RunFix()
@@ -362,6 +361,7 @@ namespace FACS01.Utilities
         {
             source = null;
             animContr = null;
+            FacsGUIStyles = null;
             NullVars();
         }
         void NullVars()
@@ -373,9 +373,6 @@ namespace FACS01.Utilities
             nPath_nType_Hashes_Props = null;
             allAnimClipsCB = null;
             allPathsTransforms = null;
-
-            //nPath = null; nType = null; isBroken = null;
-
             sourceT = null;
             results = null;
             results_int = null;

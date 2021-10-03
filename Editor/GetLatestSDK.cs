@@ -15,13 +15,14 @@ namespace FACS01.Utilities
 {
     public class GetLatestSDK : EditorWindow 
     {
+        private static FACSGUIStyles FacsGUIStyles;
         private (int[], string, string) SDK2;
 #pragma warning disable 0414
         private (int[], string, string) SDK3Avatar;
         private (int[], string, string) SDK3World;
         private static int canUpdate;
 #pragma warning restore 0414
-        private string TempFolderPath = Path.GetTempPath();
+        private readonly string TempFolderPath = Path.GetTempPath();
         private int DownLoadPercentage;
         private (int[], string) InstalledVer;
         private bool isWorking = false;
@@ -36,27 +37,23 @@ namespace FACS01.Utilities
         }
         public void OnGUI()
         {
-            GUIStyle newstyle = new GUIStyle(GUI.skin.GetStyle("HelpBox"));
-            newstyle.richText = true;
-            newstyle.fontSize = 13;
-            newstyle.wordWrap = true;
-            newstyle.alignment = TextAnchor.MiddleCenter;
+            if (FacsGUIStyles == null) { FacsGUIStyles = new FACSGUIStyles(); }
 
-            EditorGUILayout.LabelField($"<color=cyan><b>Get Latest VRChat SDK</b></color>", newstyle);
+            EditorGUILayout.LabelField($"<color=cyan><b>Get Latest VRChat SDK</b></color>", FacsGUIStyles.helpbox);
 
 #if VRC_SDK_VRCSDK3
             Type SDK3AvatarsType = Type.GetType("VRC.SDK3.Avatars.ScriptableObjects.VRCExpressionsMenu, VRCSDK3A, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null", false);
             if (SDK3AvatarsType != null)
             {   // sdk3 avatar
-                EditorGUILayout.LabelField($"You are using:\nVRChat SDK3-Avatars", newstyle);
-                if (GUILayout.Button($"<color=green>Check for Updates</color>", newstyle, GUILayout.Height(40)) && !isWorking)
+                EditorGUILayout.LabelField($"You are using:\nVRChat SDK3-Avatars", FacsGUIStyles.helpbox);
+                if (GUILayout.Button($"Check for Updates", FacsGUIStyles.button, GUILayout.Height(40)) && !isWorking)
                 {
                     GetLatestVersions("SDK3-Avatars");
                 }
                 if (canUpdate == 1)
                 {
-                    EditorGUILayout.LabelField($"{timeNow}\nCurrent version: {InstalledVer.Item2}\nLatest version: {SDK3Avatar.Item3}", newstyle);
-                    if (GUILayout.Button("<color=green>Download Update!</color>", newstyle, GUILayout.Height(40)) && !isWorking)
+                    EditorGUILayout.LabelField($"{timeNow}\nCurrent version: {InstalledVer.Item2}\nLatest version: {SDK3Avatar.Item3}", FacsGUIStyles.helpbox);
+                    if (GUILayout.Button("<color=green>Download Update!</color>", FacsGUIStyles.button, GUILayout.Height(40)) && !isWorking)
                     {
                         isWorking = true;
                         string filepath = Path.Combine(TempFolderPath, "SDK3Avatars_" + SDK3Avatar.Item3 + ".unitypackage");
@@ -66,20 +63,20 @@ namespace FACS01.Utilities
                 }
                 else if (canUpdate == 2)
                 {
-                    EditorGUILayout.LabelField($"{timeNow}\nCurrent version: {InstalledVer.Item2}\nLatest version: {SDK3Avatar.Item3}\n<color=green>You are up to date!</color>", newstyle);
+                    EditorGUILayout.LabelField($"{timeNow}\nCurrent version: {InstalledVer.Item2}\nLatest version: {SDK3Avatar.Item3}\n<color=green>You are up to date!</color>", FacsGUIStyles.helpbox);
                 }
             }
             else
             {   // sdk3 world
-                EditorGUILayout.LabelField($"You are using:\nVRChat SDK3-Worlds", newstyle);
-                if (GUILayout.Button($"<color=green>Check for Updates</color>", newstyle, GUILayout.Height(40)) && !isWorking)
+                EditorGUILayout.LabelField($"You are using:\nVRChat SDK3-Worlds", FacsGUIStyles.helpbox);
+                if (GUILayout.Button($"Check for Updates", FacsGUIStyles.button, GUILayout.Height(40)) && !isWorking)
                 {
                     GetLatestVersions("SDK3-Worlds");
                 }
                 if (canUpdate == 1)
                 {
-                    EditorGUILayout.LabelField($"{timeNow}\nCurrent version: {InstalledVer.Item2}\nLatest version: {SDK3World.Item3}", newstyle);
-                    if (GUILayout.Button("<color=green>Download Update!</color>", newstyle, GUILayout.Height(40)) && !isWorking)
+                    EditorGUILayout.LabelField($"{timeNow}\nCurrent version: {InstalledVer.Item2}\nLatest version: {SDK3World.Item3}", FacsGUIStyles.helpbox);
+                    if (GUILayout.Button("<color=green>Download Update!</color>", FacsGUIStyles.button, GUILayout.Height(40)) && !isWorking)
                     {
                         isWorking = true;
                         string filepath = Path.Combine(TempFolderPath, "SDK3Worlds_" + SDK3World.Item3 + ".unitypackage");
@@ -89,20 +86,20 @@ namespace FACS01.Utilities
                 }
                 else if (canUpdate == 2)
                 {
-                    EditorGUILayout.LabelField($"{timeNow}\nCurrent version: {InstalledVer.Item2}\nLatest version: {SDK3Avatar.Item3}\n<color=green>You are up to date!</color>", newstyle);
+                    EditorGUILayout.LabelField($"{timeNow}\nCurrent version: {InstalledVer.Item2}\nLatest version: {SDK3Avatar.Item3}\n<color=green>You are up to date!</color>", FacsGUIStyles.helpbox);
                 }
             }
 #elif VRC_SDK_VRCSDK2
             // sdk2
-            EditorGUILayout.LabelField($"You are using:\nVRChat SDK2", newstyle);
-                if (GUILayout.Button($"<color=green>Check for Updates</color>", newstyle, GUILayout.Height(40)) && !isWorking)
+            EditorGUILayout.LabelField($"You are using:\nVRChat SDK2", FacsGUIStyles.helpbox);
+                if (GUILayout.Button($"Check for Updates", FacsGUIStyles.button, GUILayout.Height(40)) && !isWorking)
                 {
                     GetLatestVersions("SDK2");
                 }
                 if (canUpdate == 1)
                 {
-                    EditorGUILayout.LabelField($"{timeNow}\nCurrent version: {InstalledVer.Item2}\nLatest version: {SDK2.Item3}", newstyle);
-                    if (GUILayout.Button("<color=green>Download Update!</color>", newstyle, GUILayout.Height(40)) && !isWorking)
+                    EditorGUILayout.LabelField($"{timeNow}\nCurrent version: {InstalledVer.Item2}\nLatest version: {SDK2.Item3}", FacsGUIStyles.helpbox);
+                    if (GUILayout.Button("<color=green>Download Update!</color>", FacsGUIStyles.button, GUILayout.Height(40)) && !isWorking)
                     {
                         isWorking = true;
                         string filepath = Path.Combine(TempFolderPath, "SDK2_" + SDK2.Item3 + ".unitypackage");
@@ -112,21 +109,21 @@ namespace FACS01.Utilities
                 }
                 else if (canUpdate == 2)
                 {
-                    EditorGUILayout.LabelField($"{timeNow}\nCurrent version: {InstalledVer.Item2}\nLatest version: {SDK2.Item3}\n<color=green>You are up to date!</color>", newstyle);
+                    EditorGUILayout.LabelField($"{timeNow}\nCurrent version: {InstalledVer.Item2}\nLatest version: {SDK2.Item3}\n<color=green>You are up to date!</color>", FacsGUIStyles.helpbox);
                 }
 #else
             // no sdk yet
-            EditorGUILayout.LabelField($"Seems you don't have any VRChat SDK installed.\nWhich one would you like to download?", newstyle);
+            EditorGUILayout.LabelField($"Seems you don't have any VRChat SDK installed.\nWhich one would you like to download?", FacsGUIStyles.helpbox);
             EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Button($"<color=green>SDK2</color>", newstyle, GUILayout.Height(40)) && !isWorking)
+            if (GUILayout.Button($"<color=green>SDK2</color>", FacsGUIStyles.button, GUILayout.Height(40)) && !isWorking)
             {
                 GetLatestVersions("NEW-SDK2");
             }
-            else if (GUILayout.Button($"<color=green>SDK3\nAvatars</color>", newstyle, GUILayout.Height(40)) && !isWorking)
+            else if (GUILayout.Button($"<color=green>SDK3\nAvatars</color>", FacsGUIStyles.button, GUILayout.Height(40)) && !isWorking)
             {
                 GetLatestVersions("NEW-SDK3-Avatars");
             }
-            else if (GUILayout.Button($"<color=green>SDK3\nWorlds</color>", newstyle, GUILayout.Height(40)) && !isWorking)
+            else if (GUILayout.Button($"<color=green>SDK3\nWorlds</color>", FacsGUIStyles.button, GUILayout.Height(40)) && !isWorking)
             {
                 GetLatestVersions("NEW-SDK3-Worlds");
             }
@@ -300,6 +297,7 @@ namespace FACS01.Utilities
         private void OnDestroy()
         {
             canUpdate = 0;
+            FacsGUIStyles = null;
         }
         [UnityEditor.Callbacks.DidReloadScripts]
         private static void OnScriptsReloaded()
