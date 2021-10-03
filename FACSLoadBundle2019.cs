@@ -9,7 +9,6 @@ using UnityEngine.Networking;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -18,7 +17,6 @@ namespace FACS01.Utilities
 {
     public class FACSLoadBundle2019 : MonoBehaviour
     {
-
         public string AssetSource;
         public string Name;
         public bool ShaderUsage;
@@ -31,9 +29,6 @@ namespace FACS01.Utilities
 
             AssetBundle LoadedAssetBundle;
             bool isURL = AssetSource.StartsWith("http");
-
-            GUIStyle style = new GUIStyle();
-            style.richText = true;
 
             if (isURL)
             {
@@ -90,8 +85,6 @@ namespace FACS01.Utilities
 
                         avatarInstance.transform.position = this.transform.position;
 
-                        //LoadedAssetBundle.Unload(false);
-
                         DidAssetLoad = true;
 
                         Debug.Log($"<color=green>{avatarInstance.name}</color> was loaded from <color=cyan>AssetBundle</color>!\n");
@@ -105,8 +98,6 @@ namespace FACS01.Utilities
             {
                 string sceneName = Path.GetFileNameWithoutExtension(scenePaths[0]);
                 SceneManager.LoadScene(sceneName);
-                
-                //LoadedAssetBundle.Unload(false);
 
                 DidAssetLoad = true;
 
