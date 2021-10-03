@@ -7,9 +7,9 @@ namespace FACS01.Utilities
     public class RemoveMissingScripts : EditorWindow 
     {
         public GameObject source;
+        private static FACSGUIStyles FacsGUIStyles;
         private static int GameObjectsScanned;
         private static int missingScriptsCount;
- 
         private static string results;
 
         [MenuItem("Tools/FACS Utilities/Remove Missing Scripts")]
@@ -20,20 +20,17 @@ namespace FACS01.Utilities
         }
         public void OnGUI()
         {
-            GUIStyle newstyle = new GUIStyle(GUI.skin.GetStyle("HelpBox"));
-            newstyle.richText = true;
-            newstyle.fontSize = 13;
-            newstyle.wordWrap = true;
+            if (FacsGUIStyles == null) { FacsGUIStyles = new FACSGUIStyles(); }
+            FacsGUIStyles.helpbox.alignment = TextAnchor.MiddleCenter;
 
             EditorGUILayout.LabelField($"<color=cyan><b>Remove Missing Scripts</b></color>\n\nScans the selected GameObject" +
                 $" and tries to delete any missing scripts inside it's hierarchy.\n" +
                 $"After that, if the selected GameObject is a Prefab, it will be unpacked completely.\n\n" +
-                $"The fix can be Undone, but it will give errors on Console.\n", newstyle);
+                $"The fix can be Undone, but it will give errors on Console.\n", FacsGUIStyles.helpbox);
 
             source = (GameObject)EditorGUILayout.ObjectField(source, typeof(GameObject), true, GUILayout.Height(40));
 
-            newstyle.alignment = TextAnchor.MiddleCenter;
-            if (GUILayout.Button("Run!", newstyle, GUILayout.Height(40)))
+            if (GUILayout.Button("Run!", FacsGUIStyles.button, GUILayout.Height(40)))
             {
                 if (source != null)
                 {
@@ -47,8 +44,8 @@ namespace FACS01.Utilities
             }
             if (results != null && results != "")
             {
-                newstyle.alignment = TextAnchor.MiddleLeft;
-                EditorGUILayout.LabelField(results, newstyle);
+                FacsGUIStyles.helpbox.alignment = TextAnchor.MiddleLeft;
+                EditorGUILayout.LabelField(results, FacsGUIStyles.helpbox);
             }
         }
         
@@ -96,6 +93,7 @@ namespace FACS01.Utilities
         private void OnDestroy()
         {
             source = null;
+            FacsGUIStyles = null;
             NullVars();
         }
         void NullVars()

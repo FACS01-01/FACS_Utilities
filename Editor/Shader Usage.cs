@@ -1,6 +1,4 @@
-﻿//code by FACS01
-
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEngine;
 using System.Collections.Generic;
 using System;
@@ -10,6 +8,7 @@ namespace FACS01.Utilities
     public class ShaderUsage : EditorWindow
     {
         public GameObject source = null;
+        private static FACSGUIStyles FacsGUIStyles;
         private static string sourcename = "";
         private static bool _bHaveRun = false;
         private Vector2 scrollPos;
@@ -25,13 +24,11 @@ namespace FACS01.Utilities
 
         public void OnGUI()
         {
-            GUIStyle newstyle = new GUIStyle(GUI.skin.GetStyle("HelpBox"));
-            newstyle.richText = true;
-            newstyle.fontSize = 13;
-            newstyle.alignment = TextAnchor.MiddleCenter;
+            if (FacsGUIStyles == null) { FacsGUIStyles = new FACSGUIStyles(); }
+
             source = (GameObject)EditorGUILayout.ObjectField(source, typeof(UnityEngine.Object), true);
 
-            if (GUILayout.Button("Search!", newstyle))
+            if (GUILayout.Button("Search!", FacsGUIStyles.button))
             {
                 if (source == null)
                     ShowNotification(new GUIContent("No object selected for searching"));
@@ -42,14 +39,13 @@ namespace FACS01.Utilities
             }
             if (!_bHaveRun) return;
 
-            newstyle.alignment = TextAnchor.MiddleLeft;
-            EditorGUILayout.TextArea($"<color=cyan><b>{shaderCount}</b> different shaders</color> were found in <color=green>{sourcename}</color> :", newstyle);
+            EditorGUILayout.TextArea($"<color=cyan><b>{shaderCount}</b> different shaders</color> were found in <color=green>{sourcename}</color> :", FacsGUIStyles.helpbox);
             scrollPos = EditorGUILayout.BeginScrollView(scrollPos);
 
             for (int i = 0; i < all_shaders.Count; i++)
             {
                 string temp = String.Join("\n\t", mats_with_shader[i]);
-                EditorGUILayout.TextArea($"<color=cyan><b>{all_shaders[i]}</b></color>\n\t{temp}", newstyle);
+                EditorGUILayout.TextArea($"<color=cyan><b>{all_shaders[i]}</b></color>\n\t{temp}", FacsGUIStyles.helpbox);
             }
             EditorGUILayout.EndScrollView();
         }
@@ -58,6 +54,7 @@ namespace FACS01.Utilities
             source = null;
             sourcename = "";
             _bHaveRun = false;
+            FacsGUIStyles = null;
         }
         public void runAlg()
         {

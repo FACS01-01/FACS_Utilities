@@ -11,10 +11,9 @@ namespace FACS01.Utilities
     {
         public DefaultAsset folderWithExpressions;
 
+        private static FACSGUIStyles FacsGUIStyles;
         private readonly string[] searchFiles = { "VRCExpressionParameters", "VRCExpressionsMenu" };
-        
-    private readonly string[] searchIn = { "Assets/VRCSDK" };
-
+        private readonly string[] searchIn = { "Assets/VRCSDK" };
         private Dictionary<string, (string, string)> searchFiles_IDs;
         private int fixCount;
         private string output_print;
@@ -26,40 +25,45 @@ namespace FACS01.Utilities
         }
         public void OnGUI()
         {
-            GUIStyle newstyle = new GUIStyle(GUI.skin.GetStyle("HelpBox"));
-            newstyle.richText = true;
-            newstyle.fontSize = 13;
-            newstyle.wordWrap = true;
+            if (FacsGUIStyles == null) { FacsGUIStyles = new FACSGUIStyles(); }
+            FacsGUIStyles.helpbox.alignment = TextAnchor.MiddleCenter;
 
-            EditorGUILayout.LabelField($"<color=cyan><b>Fix VRC SDK3 Expression Menus and Parameters</b></color>\n\nScans the selected folder and assigns the correct scripts to broken Expression Menus and Parameters.\n", newstyle);
+            EditorGUILayout.LabelField($"<color=cyan><b>Fix VRC SDK3 Expression Menus and Parameters</b></color>\n\nScans the selected folder and assigns the correct scripts to broken Expression Menus and Parameters.\n", FacsGUIStyles.helpbox);
             folderWithExpressions = (DefaultAsset)EditorGUILayout.ObjectField(folderWithExpressions, typeof(DefaultAsset), false, GUILayout.Height(50));
-            newstyle.alignment = TextAnchor.MiddleCenter;
 
-            if (GUILayout.Button("Run!", newstyle, GUILayout.Height(40)))
+            if (GUILayout.Button("Run!", FacsGUIStyles.button, GUILayout.Height(40)))
             {
-                Debug.Log("EXPRESSIONS FIXER BEGINS");
-
-                fixCount = 0;
-                output_print = "";
-                searchFiles_IDs = new Dictionary<string, (string, string)>();
-                
-                Run();
-
-                string[] filePaths = Directory.GetFiles(AssetDatabase.GetAssetPath(folderWithExpressions), "*.asset", SearchOption.AllDirectories);
-
-                foreach (string filePath in filePaths)
+                if (folderWithExpressions != null)
                 {
-                    string path2 = filePath.Replace('\\', '/');
-                    if (IsYAML(path2)) { Fix(path2); AssetDatabase.Refresh(); }
+                    Debug.Log("EXPRESSIONS FIXER BEGINS");
+
+                    fixCount = 0;
+                    output_print = "";
+                    searchFiles_IDs = new Dictionary<string, (string, string)>();
+
+                    Run();
+
+                    string[] filePaths = Directory.GetFiles(AssetDatabase.GetAssetPath(folderWithExpressions), "*.asset", SearchOption.AllDirectories);
+
+                    foreach (string filePath in filePaths)
+                    {
+                        string path2 = filePath.Replace('\\', '/');
+                        if (IsYAML(path2)) { Fix(path2); AssetDatabase.Refresh(); }
+                    }
+
+                    output_print = $"Results:\n   • <color=green>Fixed files:</color> {fixCount}\n";
+                    Debug.Log("EXPRESSIONS FIXER FINISHED");
+                }
+                else
+                {
+                    ShowNotification(new GUIContent("Empty field?"));
                 }
 
-                output_print = $"Results:\n   • <color=green>Fixed files:</color> {fixCount}\n";
-                Debug.Log("EXPRESSIONS FIXER FINISHED");
             }
             if (output_print != null && output_print != "")
             {
-                newstyle.alignment = TextAnchor.MiddleLeft;
-                EditorGUILayout.LabelField(output_print, newstyle);
+                FacsGUIStyles.helpbox.alignment = TextAnchor.MiddleLeft;
+                EditorGUILayout.LabelField(output_print, FacsGUIStyles.helpbox);
             }
         }
         private void Fix(string path)
@@ -134,6 +138,7 @@ namespace FACS01.Utilities
         {
             output_print = null;
             searchFiles_IDs = null;
+            FacsGUIStyles = null;
         }
     }
 }
