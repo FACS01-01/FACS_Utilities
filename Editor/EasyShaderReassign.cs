@@ -215,9 +215,16 @@ namespace FACS01.Utilities
                         string line = sr.ReadLine();
                         if (line.StartsWith("  m_Shader: "))
                         {
-                            int pFrom = line.IndexOf("guid: ") + "guid: ".Length;
-                            int pTo = line.LastIndexOf(", type:");
-                            GUID = line.Substring(pFrom, pTo - pFrom);
+                            if (line.Contains("guid: "))
+                            {
+                                int pFrom = line.IndexOf("guid: ") + "guid: ".Length;
+                                int pTo = line.LastIndexOf(", type:");
+                                GUID = line.Substring(pFrom, pTo - pFrom);
+                            }
+                            else
+                            {
+                                GUID = "NoGUID";
+                            }
                         }
                         else if (line.StartsWith("    OriginalShader:"))
                         {
@@ -250,7 +257,12 @@ namespace FACS01.Utilities
                         {
                             if (OriginalShader != "")
                             {
-                                OldShaders.Add(("NoGUID", OriginalShader, new List<(Material, string)> { (mat, Path.GetFileNameWithoutExtension(matpath)) }));
+                                OldShaders.Add(("UnknownGUID", OriginalShader, new List<(Material, string)> { (mat, Path.GetFileNameWithoutExtension(matpath)) }));
+                                addedtolist = true;
+                            }
+                            else if (GUID == "NoGUID")
+                            {
+                                OldShaders.Add(("NoGUID", "Internal Error Shader (no shader)", new List<(Material, string)> { (mat, Path.GetFileNameWithoutExtension(matpath)) }));
                                 addedtolist = true;
                             }
                             else
