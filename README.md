@@ -18,3 +18,5 @@ Features:
 	- Fix VRC3 Expressions
 	
 	- Get Latest VRC SDK
+	
+	- VRC Custom Preview Images (thanks to/using [SixLabors.ImageSharp](https://github.com/SixLabors/ImageSharp))
