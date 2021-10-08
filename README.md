@@ -19,4 +19,4 @@ Features:
 	
 	- Get Latest VRC SDK
 	
-	- VRC Custom Preview Images (thanks to/using [SixLabors.ImageSharp](https://github.com/SixLabors/ImageSharp))
+	- VRC Custom Preview Images (thanks to/using SixLabors.ImageSharp)
