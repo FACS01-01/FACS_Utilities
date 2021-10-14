@@ -1,10 +1,10 @@
 ﻿#if UNITY_EDITOR
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System;
-using UnityEngine;
 using UnityEditor;
 using UnityEditor.Animations;
+using UnityEngine;
 
 namespace FACS01.Utilities
 {
@@ -173,7 +173,26 @@ namespace FACS01.Utilities
                     }
                     else if (cB.propertyName.StartsWith("material."))
                     {
-                        addkey = (uint)Animator.StringToHash(cB.propertyName.Substring(9)) & 0xFFFFFFF;
+                        if (cB.propertyName.EndsWith(".x"))
+                        {
+                            addkey = (uint)Animator.StringToHash(cB.propertyName.Substring(9).Remove(cB.propertyName.Length - 11)) & 0xFFFFFFF;
+                        }
+                        else if (cB.propertyName.EndsWith(".y"))
+                        {
+                            addkey = ((uint)Animator.StringToHash(cB.propertyName.Substring(9).Remove(cB.propertyName.Length - 11)) & 0xFFFFFFF) + (uint)268435456;
+                        }
+                        else if (cB.propertyName.EndsWith(".z"))
+                        {
+                            addkey = ((uint)Animator.StringToHash(cB.propertyName.Substring(9).Remove(cB.propertyName.Length - 11)) & 0xFFFFFFF) + (uint)536870912;
+                        }
+                        else if (cB.propertyName.EndsWith(".w"))
+                        {
+                            addkey = ((uint)Animator.StringToHash(cB.propertyName.Substring(9).Remove(cB.propertyName.Length - 11)) & 0xFFFFFFF) + (uint)805306368;
+                        }
+                        else
+                        {
+                            addkey = (uint)Animator.StringToHash(cB.propertyName.Substring(9)) & 0xFFFFFFF;
+                        }
                     }
                     else
                     {
@@ -302,7 +321,12 @@ namespace FACS01.Utilities
             {
                 if (cBpropName.StartsWith(key) && uint.TryParse(cBpropName.Substring(key.Length), out uint hash))
                 {
-                    if (nPath_nType_Hashes_Props[nPath][nType].TryGetValue(hash & 0xFFFFFFF, out string newPropName))
+                    if (nPath_nType_Hashes_Props[nPath][nType].TryGetValue(hash & 0xFFFFFFFF, out string newPropName))
+                    {
+                        SetCurveFix(ac, cB, newType, newPath, newPropName);
+                        return;
+                    }
+                    else if (nPath_nType_Hashes_Props[nPath][nType].TryGetValue(hash & 0xFFFFFFF, out newPropName))
                     {
                         SetCurveFix(ac, cB, newType, newPath, newPropName);
                         return;
