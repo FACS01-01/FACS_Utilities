@@ -23,7 +23,7 @@ namespace FACS01.Utilities
         private Tuple<string, string, string>[] GoodResults;
         private Vector2 scrollPos;
 
-        [MenuItem("FACS Utils/Repair Avatar/Easy Shader Reassign", false, 1)]
+        [MenuItem("FACS Utils/Repair Avatar/Easy Shader Reassign", false, 1001)]
         public static void ShowWindow2()
         {
             GetWindow(typeof(EasyShaderReassign), false, "Easy Shader Reassign", true);

@@ -12,7 +12,7 @@ namespace FACS01.Utilities
         private static int missingScriptsCount;
         private static string results;
 
-        [MenuItem("FACS Utils/Repair Avatar/Remove Missing Scripts", false, 4)]
+        [MenuItem("FACS Utils/Repair Avatar/Remove Missing Scripts", false, 1004)]
         public static void ShowWindow2()
         {
             EditorWindow editorWindow = GetWindow(typeof(RemoveMissingScripts), false, "Remove Missing Scripts", true);

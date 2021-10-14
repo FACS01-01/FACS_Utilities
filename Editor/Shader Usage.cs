@@ -16,7 +16,7 @@ namespace FACS01.Utilities
         private static List<List<string>> mats_with_shader;
         private static int shaderCount;
 
-        [MenuItem("FACS Utils/Misc/Shaders Used by Object")]
+        [MenuItem("FACS Utils/Misc/Shaders Used by Object", false, 1000)]
         public static void ShowWindow()
         {
             GetWindow(typeof(ShaderUsage), false, "Shaders Used by Object", true);
