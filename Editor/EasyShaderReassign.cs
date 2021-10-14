@@ -23,8 +23,8 @@ namespace FACS01.Utilities
         private Tuple<string, string, string>[] GoodResults;
         private Vector2 scrollPos;
 
-        [MenuItem("Tools/FACS Utilities/Easy Shader Reassign")]
-        public static void ShowWindow()
+        [MenuItem("FACS Utils/Repair Avatar/Easy Shader Reassign", false, 1)]
+        public static void ShowWindow2()
         {
             GetWindow(typeof(EasyShaderReassign), false, "Easy Shader Reassign", true);
         }
@@ -32,15 +32,17 @@ namespace FACS01.Utilities
         {
             if (FacsGUIStyles == null) { FacsGUIStyles = new FACSGUIStyles(); }
 
-            EditorGUILayout.LabelField($"<color=cyan><b>Easy Shader Reassign</b></color>\n\nScans the selected folder and helps you assign the correct shaders to broken materials.\n", FacsGUIStyles.helpbox);
+            EditorGUILayout.LabelField($"<color=cyan><b>Easy Shader Reassign</b></color>\n\nScans the selected Materials folder and helps you assign the correct shaders to broken materials.\n", FacsGUIStyles.helpbox);
             folderWithMaterials = (DefaultAsset)EditorGUILayout.ObjectField(folderWithMaterials, typeof(DefaultAsset), false, GUILayout.Height(50));
             FacsGUIStyles.helpbox.alignment = TextAnchor.MiddleCenter;
 
-            if (GUILayout.Button("Run!", FacsGUIStyles.button, GUILayout.Height(40)))
+            if (GUILayout.Button("Scan!", FacsGUIStyles.button, GUILayout.Height(40)))
             {
                 if (folderWithMaterials != null)
                 {
+                    Debug.Log("EASY SHADER REASSIGN - BEGIN FIRST SCAN");
                     RunFix();
+                    Debug.Log("EASY SHADER REASSIGN - FIRST SCAN FINISHED");
                 }
                 else
                 {
@@ -96,6 +98,7 @@ namespace FACS01.Utilities
                 FacsGUIStyles.helpbox.alignment = TextAnchor.MiddleCenter;
                 if (GUILayout.Button("Apply Shaders!", FacsGUIStyles.button, GUILayout.Height(40)))
                 {
+                    Debug.Log("EASY SHADER REASSIGN - BEGIN APPLY SHADERS");
                     bool matsfixed = false;
                     if (OldShaders != null)
                     {
@@ -129,6 +132,7 @@ namespace FACS01.Utilities
                             }
                         }
                     }
+                    Debug.Log("EASY SHADER REASSIGN - APPLY SHADERS FINISHED");
                     if (matsfixed)
                     {
                         RunFix();
@@ -354,12 +358,12 @@ namespace FACS01.Utilities
                 }
                 if (!OldShaders.Any())
                 {
-                    Debug.LogWarning($"No valid shader found in Shader folder: {shadersPath}");
+                    Debug.LogWarning($"No valid shader found in Shader folder: {shadersPath}.\nIf all materials were paired to a shader successfully, you can ignore this warning.");
                 }
             }
             else
             {
-                Debug.LogWarning($"Folder with (dummy) shaders not found in {AssetsPath}");
+                Debug.LogWarning($"Folder with (dummy) shaders not found in {AssetsPath}.\nIf all materials were paired to a shader successfully, you can ignore this warning.");
             }
         }
         private void OnDestroy()
