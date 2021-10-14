@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿//code by FACS01
+
+using UnityEngine;
 using UnityEditor;
 using System;
 using System.Collections.Generic;
@@ -12,11 +14,15 @@ namespace FACS01.Utilities
         private List<string> ShaderUsageIn;
         private List<List<string>> MaterialUsageIn;
         private readonly string[] filters = { "VRChat Files (vrca, vrcw)", "vrca,vrcw", "All files", "*" };
+        private FACSLoadBundle2019 LoadBundleScript;
+
+        private void Awake()
+        {
+            LoadBundleScript = (FACSLoadBundle2019)target;
+        }
         public override void OnInspectorGUI()
         {
             if (FacsGUIStyles == null) { FacsGUIStyles = new FACSGUIStyles(); FacsGUIStyles.helpboxSmall.alignment = TextAnchor.MiddleLeft; }
-
-            FACSLoadBundle2019 LoadBundleScript = (FACSLoadBundle2019)target;
             EditorGUIUtility.labelWidth = 94;
             EditorGUILayout.BeginHorizontal();
             if (GUILayout.Button($"Bundle Source", FacsGUIStyles.buttonSmall, GUILayout.Height(20), GUILayout.Width(93)))
@@ -33,6 +39,12 @@ namespace FACS01.Utilities
 
             LoadBundleScript.Name = EditorGUILayout.TextField(" Bundle Name", LoadBundleScript.Name);
 
+            EditorGUILayout.Space();
+            if (LoadBundleScript.DidAssetLoad && GUILayout.Button($"Clear and Reload Bundle", FacsGUIStyles.button))
+            {
+                LoadBundleScript.OnDisable();
+                LoadBundleScript.OnEnable();
+            }
             EditorGUILayout.Space();
             LoadBundleScript.ShaderUsage = EditorGUILayout.Foldout(LoadBundleScript.ShaderUsage, "Shaders used in Asset", true);
 
