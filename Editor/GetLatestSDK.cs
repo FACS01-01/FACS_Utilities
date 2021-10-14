@@ -13,7 +13,7 @@ using VRC.SDK3;
 
 namespace FACS01.Utilities
 {
-    public class GetLatestSDK : EditorWindow 
+    public class GetLatestSDK : EditorWindow
     {
         private static FACSGUIStyles FacsGUIStyles;
         private (int[], string, string) SDK2;
@@ -29,8 +29,8 @@ namespace FACS01.Utilities
 
         private string timeNow;
 
-        [MenuItem("Tools/FACS Utilities/Get Latest VRC SDK")]
-        public static void ShowWindow()
+        [MenuItem("FACS Utils/Repair Avatar/Get Latest VRC SDK", false, 0)]
+        public static void ShowWindow2()
         {
             EditorWindow editorWindow = GetWindow(typeof(GetLatestSDK), false, "Get Latest SDK", true);
             editorWindow.autoRepaintOnSceneChange = true;
@@ -58,7 +58,7 @@ namespace FACS01.Utilities
                         isWorking = true;
                         string filepath = Path.Combine(TempFolderPath, "SDK3Avatars_" + SDK3Avatar.Item3 + ".unitypackage");
                         if (!File.Exists(filepath)) DownloadFile(SDK3Avatar.Item2, filepath);
-                        else { AssetDatabase.ImportPackage(filepath, true); canUpdate = 0; isWorking = false; }
+                        else { Debug.Log($"SDK3 Avatars {SDK3Avatar.Item3} found in %TEMP% folder."); AssetDatabase.ImportPackage(filepath, true); canUpdate = 0; isWorking = false; }
                     }
                 }
                 else if (canUpdate == 2)
@@ -81,7 +81,7 @@ namespace FACS01.Utilities
                         isWorking = true;
                         string filepath = Path.Combine(TempFolderPath, "SDK3Worlds_" + SDK3World.Item3 + ".unitypackage");
                         if (!File.Exists(filepath)) DownloadFile(SDK3World.Item2, filepath);
-                        else { AssetDatabase.ImportPackage(filepath, true); canUpdate = 0; isWorking = false; }
+                        else { Debug.Log($"SDK3 Worlds {SDK3World.Item3} found in %TEMP% folder."); AssetDatabase.ImportPackage(filepath, true); canUpdate = 0; isWorking = false; }
                     }
                 }
                 else if (canUpdate == 2)
@@ -104,7 +104,7 @@ namespace FACS01.Utilities
                         isWorking = true;
                         string filepath = Path.Combine(TempFolderPath, "SDK2_" + SDK2.Item3 + ".unitypackage");
                         if (!File.Exists(filepath)) DownloadFile(SDK2.Item2, filepath);
-                        else { AssetDatabase.ImportPackage(filepath, true); canUpdate = 0; isWorking = false;}
+                        else { Debug.Log($"SDK2 {SDK2.Item3} found in %TEMP% folder."); AssetDatabase.ImportPackage(filepath, true); canUpdate = 0; isWorking = false;}
                     }
                 }
                 else if (canUpdate == 2)
@@ -133,7 +133,7 @@ namespace FACS01.Utilities
         private void GetLatestVersions(string sdk)
         {
             isWorking = true;
-            Debug.Log("Requesting SDK versions.");
+            Debug.Log("Requesting SDK versions...");
             SDK2.Item3 = null; SDK3Avatar.Item3 = null; SDK3World.Item3 = null; canUpdate = 0;
             using (WebClient wc = new WebClient())
             {
@@ -147,7 +147,7 @@ namespace FACS01.Utilities
             if (e.ProgressPercentage != DownLoadPercentage && e.ProgressPercentage % 20 == 0)
             {
                 DownLoadPercentage = e.ProgressPercentage;
-                string tmp = "Downloading SDK versions: " + e.ProgressPercentage + "%";
+                string tmp = "Requesting SDK versions: " + e.ProgressPercentage + "%";
                 Debug.Log(tmp);
             }
         }
@@ -188,9 +188,8 @@ namespace FACS01.Utilities
                     {
                         SDK3Avatar = (sdkVerParse, sdkLink, sdkVer);
                     }
-                    // Debug.Log("SDK VER: " + sdkType + " ; SDK LINK: " + sdkLink + " :: " + sdkVer);
                 }
-                if (!userState.StartsWith("NEW-")) //  userState == "SDK2" || userState == "SDK3-Avatars" || userState == "SDK3-Worlds"
+                if (!userState.StartsWith("NEW-"))
                 {
                     GetInstalledVer();
                     if (userState == "SDK2" && SDK2.Item3 != null) CanUpdate(SDK2);
@@ -205,19 +204,19 @@ namespace FACS01.Utilities
                     {
                         string filepath = Path.Combine(TempFolderPath, "SDK2_" + SDK2.Item3 + ".unitypackage");
                         if (!File.Exists(filepath)) DownloadFile(SDK2.Item2, filepath);
-                        else { AssetDatabase.ImportPackage(filepath, true); canUpdate = 0; isWorking = false; }
+                        else { Debug.Log($"SDK2 {SDK2.Item3} found in %TEMP% folder."); AssetDatabase.ImportPackage(filepath, true); canUpdate = 0; isWorking = false; }
                     }
                     else if (userState == "NEW-SDK3-Avatars" && SDK3Avatar.Item3 != null)
                     {
                         string filepath = Path.Combine(TempFolderPath, "SDK3Avatars_" + SDK3Avatar.Item3 + ".unitypackage");
                         if (!File.Exists(filepath)) DownloadFile(SDK3Avatar.Item2, filepath);
-                        else { AssetDatabase.ImportPackage(filepath, true); canUpdate = 0; isWorking = false; }
+                        else { Debug.Log($"SDK3 Avatars {SDK3Avatar.Item3} found in %TEMP% folder."); AssetDatabase.ImportPackage(filepath, true); canUpdate = 0; isWorking = false; }
                     }
                     else if (SDK3World.Item3 != null)
                     {
                         string filepath = Path.Combine(TempFolderPath, "SDK3Worlds_" + SDK3World.Item3 + ".unitypackage");
                         if (!File.Exists(filepath)) DownloadFile(SDK3World.Item2, filepath);
-                        else { AssetDatabase.ImportPackage(filepath, true); canUpdate = 0; isWorking = false; }
+                        else { Debug.Log($"SDK3 Worlds {SDK3World.Item3} found in %TEMP% folder."); AssetDatabase.ImportPackage(filepath, true); canUpdate = 0; isWorking = false; }
                     }
                     else { canUpdate = 0; isWorking = false; }
                 }
