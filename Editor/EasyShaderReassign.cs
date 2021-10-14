@@ -1,10 +1,12 @@
-﻿using System;
+﻿#if UNITY_EDITOR
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
-using System.IO;
-// Encoding.UTF8.GetString(Encoding.Convert(Encoding.Unicode, Encoding.UTF8, Encoding.Unicode.GetBytes("Some string that I am using but Poacher\u2019s shows unicode!")));
+
 namespace FACS01.Utilities
 {
     public class EasyShaderReassign : EditorWindow
@@ -209,7 +211,7 @@ namespace FACS01.Utilities
                     StreamReader sr = new StreamReader(matpath);
                     bool addedtolist = false;
                     string GUID = "";
-                    string OriginalShader = "";
+                    string OriginalShader = @"";
                     while (sr.Peek() > 0)
                     {
                         string line = sr.ReadLine();
@@ -235,10 +237,11 @@ namespace FACS01.Utilities
                             break;
                         }
                     }
+                    OriginalShader = Regex.Unescape(OriginalShader).Replace("\"","");
                     sr.Close();
-                    if (mat_shadername == "Hidden/InternalErrorShader" && OldShaders.Any())
+                    if (mat_shadername == "Hidden/InternalErrorShader")
                     {
-                        foreach (var oldshader in OldShaders)
+                        if (OldShaders.Any()) foreach (var oldshader in OldShaders)
                         {
                             if (GUID == oldshader.Item1)
                             {
@@ -378,3 +381,4 @@ namespace FACS01.Utilities
         }
     }
 }
+#endif
