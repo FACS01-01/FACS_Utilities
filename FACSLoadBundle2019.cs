@@ -22,12 +22,38 @@ namespace FACS01.Utilities
         public bool ShaderUsage;
         public bool DidAssetLoad;
         private GameObject avatarInstance;
+        private AssetBundle LoadedAssetBundle;
+        public IEnumerator coroutine;
 
-        private IEnumerator Start()
+        public void OnEnable()
+        {
+            coroutine = LoadBundle();
+            StartCoroutine(coroutine);
+        }
+        public void OnDisable()
+        {
+            if (coroutine != null)
+            {
+                StopCoroutine(coroutine);
+                coroutine = null;
+            }
+            if (LoadedAssetBundle != null)
+            {
+                LoadedAssetBundle.Unload(true);
+                LoadedAssetBundle = null;
+            }
+            if (avatarInstance != null)
+            {
+                Object.Destroy(avatarInstance);
+                avatarInstance = null;
+            }
+            DidAssetLoad = false;
+            
+        }
+        public IEnumerator LoadBundle()
         {
             if (AssetSource == "") { yield break; }
 
-            AssetBundle LoadedAssetBundle;
             bool isURL = AssetSource.StartsWith("http");
 
             if (isURL)
@@ -59,7 +85,8 @@ namespace FACS01.Utilities
                 {
                     if (asset.EndsWith(".prefab"))
                     {
-                        avatarInstance = Instantiate((GameObject)LoadedAssetBundle.LoadAsset(asset));
+                        avatarInstance = Instantiate((GameObject)LoadedAssetBundle.LoadAsset(asset), this.transform, false);
+                        avatarInstance.transform.position = new Vector3(0, 0, 0);
 
 #if VRC_SDK_VRCSDK3
                         DestroyImmediate(avatarInstance.GetComponent<PipelineSaver>());
@@ -82,8 +109,6 @@ namespace FACS01.Utilities
                             if (isURL) avatarInstance.name = prefabName;
                             else avatarInstance.name = fileName + " (" + prefabName + ")";
                         }
-
-                        avatarInstance.transform.position = this.transform.position;
 
                         DidAssetLoad = true;
 
