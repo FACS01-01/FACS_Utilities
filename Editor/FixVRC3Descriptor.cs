@@ -18,8 +18,8 @@ namespace FACS01.Utilities
         private int fixCount;
         private string output_print;
 
-        [MenuItem("Tools/FACS Utilities/Fix VRC3 Avatar Descriptor")]
-        public static void ShowWindow()
+        [MenuItem("FACS Utils/Repair Avatar/Fix VRC3 Avatar Descriptor", false, 3)]
+        public static void ShowWindow2()
         {
             GetWindow(typeof(FixVRC3AvatarDescriptor), false, "Fix VRC3 Avatar Descriptor", true);
         }
@@ -31,9 +31,9 @@ namespace FACS01.Utilities
             EditorGUILayout.LabelField($"<color=cyan><b>Fix VRC SDK3 Avatar Descriptor</b></color>\n\nScans the selected folder and assigns the correct scripts to broken Prefab Avatar Descriptors.\n", FacsGUIStyles.helpbox);
             brokenPrefabsFolder = (DefaultAsset)EditorGUILayout.ObjectField(brokenPrefabsFolder, typeof(DefaultAsset), false, GUILayout.Height(50));
 
-            if (GUILayout.Button("Run!", FacsGUIStyles.button, GUILayout.Height(40)))
+            if (GUILayout.Button("Run Fix!", FacsGUIStyles.button, GUILayout.Height(40)))
             {
-                Debug.Log("AVATAR DESCRIPTOR FIXER BEGINS");
+                Debug.Log("FIX VRC3 AVATAR DESCRIPTOR - BEGINS");
 
                 fixCount = 0;
                 output_print = "";
@@ -50,7 +50,8 @@ namespace FACS01.Utilities
                 }
 
                 output_print = $"Results:\n   • <color=green>Fixed prefabs:</color> {fixCount}\n";
-                Debug.Log("AVATAR DESCRIPTOR FIXER FINISHED");
+
+                Debug.Log("FIX VRC3 AVATAR DESCRIPTOR - FINISHED");
             }
             if (output_print != null && output_print != "")
             {

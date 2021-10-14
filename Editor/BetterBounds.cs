@@ -11,7 +11,7 @@ namespace FACS01.Utilities
 
         private static FACSGUIStyles FacsGUIStyles;
 
-        [MenuItem("Tools/FACS Utilities/Better Avatar Bounds")]
+        [MenuItem("FACS Utils/Misc/Better Avatar Bounds")]
         public static void ShowWindow()
         {
             GetWindow(typeof(BetterBounds), false, "Better Avatar Bounds", true);
@@ -29,7 +29,9 @@ namespace FACS01.Utilities
             {
                 if (source != null)
                 {
+                    Debug.Log("BETTER AVATAR BOUNDS BEGINS");
                     RunFix();
+                    Debug.Log("BETTER AVATAR BOUNDS FINISHED");
                 }
                 else
                 {

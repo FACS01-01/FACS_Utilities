@@ -18,8 +18,8 @@ namespace FACS01.Utilities
         private int fixCount;
         private string output_print;
 
-        [MenuItem("Tools/FACS Utilities/Fix VRC3 Expressions")]
-        public static void ShowWindow()
+        [MenuItem("FACS Utils/Repair Avatar/Fix VRC3 Expressions", false, 2)]
+        public static void ShowWindow2()
         {
             GetWindow(typeof(FixVRC3Expressions), false, "Fix VRC3 Expressions", true);
         }
@@ -31,11 +31,11 @@ namespace FACS01.Utilities
             EditorGUILayout.LabelField($"<color=cyan><b>Fix VRC SDK3 Expression Menus and Parameters</b></color>\n\nScans the selected folder and assigns the correct scripts to broken Expression Menus and Parameters.\n", FacsGUIStyles.helpbox);
             folderWithExpressions = (DefaultAsset)EditorGUILayout.ObjectField(folderWithExpressions, typeof(DefaultAsset), false, GUILayout.Height(50));
 
-            if (GUILayout.Button("Run!", FacsGUIStyles.button, GUILayout.Height(40)))
+            if (GUILayout.Button("Run Fix!", FacsGUIStyles.button, GUILayout.Height(40)))
             {
                 if (folderWithExpressions != null)
                 {
-                    Debug.Log("EXPRESSIONS FIXER BEGINS");
+                    Debug.Log("FIX VRC3 EXPRESSIONS - BEGINS");
 
                     fixCount = 0;
                     output_print = "";
@@ -52,7 +52,7 @@ namespace FACS01.Utilities
                     }
 
                     output_print = $"Results:\n   • <color=green>Fixed files:</color> {fixCount}\n";
-                    Debug.Log("EXPRESSIONS FIXER FINISHED");
+                    Debug.Log("FIX VRC3 EXPRESSIONS - FINISHED");
                 }
                 else
                 {

@@ -16,7 +16,7 @@ namespace FACS01.Utilities
         private static List<List<string>> mats_with_shader;
         private static int shaderCount;
 
-        [MenuItem("Tools/FACS Utilities/Shaders Used by Object")]
+        [MenuItem("FACS Utils/Misc/Shaders Used by Object")]
         public static void ShowWindow()
         {
             GetWindow(typeof(ShaderUsage), false, "Shaders Used by Object", true);
@@ -26,12 +26,14 @@ namespace FACS01.Utilities
         {
             if (FacsGUIStyles == null) { FacsGUIStyles = new FACSGUIStyles(); }
 
-            source = (GameObject)EditorGUILayout.ObjectField(source, typeof(UnityEngine.Object), true);
+            EditorGUILayout.LabelField($"<color=cyan><b>Shaders Used by Object</b></color>\n\nScans the selected GameObject and displays all materials currently on it, grouped by their shaders.\n", FacsGUIStyles.helpbox);
 
-            if (GUILayout.Button("Search!", FacsGUIStyles.button))
+            source = (GameObject)EditorGUILayout.ObjectField(source, typeof(GameObject), true, GUILayout.Height(50));
+
+            if (GUILayout.Button("Search!", FacsGUIStyles.button, GUILayout.Height(40)))
             {
                 if (source == null)
-                    ShowNotification(new GUIContent("No object selected for searching"));
+                    ShowNotification(new GUIContent("Empty field?"));
                 else
                 {
                     runAlg();

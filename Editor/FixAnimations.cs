@@ -35,8 +35,8 @@ namespace FACS01.Utilities
         private List<(AnimationClip, EditorCurveBinding)> allAnimClipsCB;
         private List<Transform> allPathsTransforms;
 
-        [MenuItem("Tools/FACS Utilities/Fix Animations Missing Paths")]
-        public static void ShowWindow()
+        [MenuItem("FACS Utils/Repair Avatar/Fix Animations Missing Paths", false, 6)]
+        public static void ShowWindow2()
         {
             GetWindow(typeof(FixAnimations), false, "Fix Animations Paths", true);
         }
@@ -50,7 +50,7 @@ namespace FACS01.Utilities
                 $"This will overwrite all modified Animations, but can be reverted with Undo.\n", FacsGUIStyles.helpbox);
 
             EditorGUILayout.BeginHorizontal();
-            source = (GameObject)EditorGUILayout.ObjectField(source, typeof(UnityEngine.Object), true, GUILayout.Height(40));
+            source = (GameObject)EditorGUILayout.ObjectField(source, typeof(GameObject), true, GUILayout.Height(40));
             EditorGUILayout.BeginVertical();
             int height;
             if (animContr == null && animContrOR == null) height = 20; else height = 40;
@@ -79,7 +79,7 @@ namespace FACS01.Utilities
         }
         public void RunFix()
         {
-            Debug.Log($"<color=cyan>ANIMATION FIXER BEGINS</color>");
+            Debug.Log($"<color=cyan>FIX ANIMATIONS MISSING PATHS BEGINS</color>");
 
             sourceT = source.transform;
             Paths_nPath = new Dictionary<string, int>();
@@ -137,7 +137,7 @@ namespace FACS01.Utilities
                 if (window) window.Repaint();
             }
 
-            Debug.Log($"<color=cyan>ANIMATION FIXER FINISHED</color>");
+            Debug.Log($"<color=cyan>FIX ANIMATIONS MISSING PATHS FINISHED</color>");
         }
         private void Gen_ComponentLists(Transform t)
         {

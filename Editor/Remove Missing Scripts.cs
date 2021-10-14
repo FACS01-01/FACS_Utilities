@@ -12,8 +12,8 @@ namespace FACS01.Utilities
         private static int missingScriptsCount;
         private static string results;
 
-        [MenuItem("Tools/FACS Utilities/Remove Missing Scripts")]
-        public static void ShowWindow()
+        [MenuItem("FACS Utils/Repair Avatar/Remove Missing Scripts", false, 4)]
+        public static void ShowWindow2()
         {
             EditorWindow editorWindow = GetWindow(typeof(RemoveMissingScripts), false, "Remove Missing Scripts", true);
             editorWindow.autoRepaintOnSceneChange = true;
@@ -30,7 +30,7 @@ namespace FACS01.Utilities
 
             source = (GameObject)EditorGUILayout.ObjectField(source, typeof(GameObject), true, GUILayout.Height(40));
 
-            if (GUILayout.Button("Run!", FacsGUIStyles.button, GUILayout.Height(40)))
+            if (GUILayout.Button("Run Fix!", FacsGUIStyles.button, GUILayout.Height(40)))
             {
                 if (source != null)
                 {
