@@ -35,7 +35,7 @@ namespace FACS01.Utilities
         private List<(AnimationClip, EditorCurveBinding)> allAnimClipsCB;
         private List<Transform> allPathsTransforms;
 
-        [MenuItem("FACS Utils/Repair Avatar/Fix Animations Missing Paths", false, 6)]
+        [MenuItem("FACS Utils/Repair Avatar/Fix Animations Missing Paths", false, 1006)]
         public static void ShowWindow2()
         {
             GetWindow(typeof(FixAnimations), false, "Fix Animations Paths", true);

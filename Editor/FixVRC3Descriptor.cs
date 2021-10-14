@@ -18,7 +18,7 @@ namespace FACS01.Utilities
         private int fixCount;
         private string output_print;
 
-        [MenuItem("FACS Utils/Repair Avatar/Fix VRC3 Avatar Descriptor", false, 3)]
+        [MenuItem("FACS Utils/Repair Avatar/Fix VRC3 Avatar Descriptor", false, 1003)]
         public static void ShowWindow2()
         {
             GetWindow(typeof(FixVRC3AvatarDescriptor), false, "Fix VRC3 Avatar Descriptor", true);

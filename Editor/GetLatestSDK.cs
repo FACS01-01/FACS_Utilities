@@ -29,7 +29,7 @@ namespace FACS01.Utilities
 
         private string timeNow;
 
-        [MenuItem("FACS Utils/Repair Avatar/Get Latest VRC SDK", false, 0)]
+        [MenuItem("FACS Utils/Repair Avatar/Get Latest VRC SDK", false, 1000)]
         public static void ShowWindow2()
         {
             EditorWindow editorWindow = GetWindow(typeof(GetLatestSDK), false, "Get Latest SDK", true);

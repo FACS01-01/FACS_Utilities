@@ -18,7 +18,7 @@ namespace FACS01.Utilities
         private int fixCount;
         private string output_print;
 
-        [MenuItem("FACS Utils/Repair Avatar/Fix VRC3 Expressions", false, 2)]
+        [MenuItem("FACS Utils/Repair Avatar/Fix VRC3 Expressions", false, 1002)]
         public static void ShowWindow2()
         {
             GetWindow(typeof(FixVRC3Expressions), false, "Fix VRC3 Expressions", true);

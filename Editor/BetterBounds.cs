@@ -11,7 +11,7 @@ namespace FACS01.Utilities
 
         private static FACSGUIStyles FacsGUIStyles;
 
-        [MenuItem("FACS Utils/Misc/Better Avatar Bounds")]
+        [MenuItem("FACS Utils/Misc/Better Avatar Bounds", false, 1001)]
         public static void ShowWindow()
         {
             GetWindow(typeof(BetterBounds), false, "Better Avatar Bounds", true);
