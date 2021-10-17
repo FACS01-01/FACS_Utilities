@@ -13,6 +13,8 @@ Features:
 	
 	- Shader Detector
 	
+	- Better Avatar Bounds
+	
 	- Fix VRC3 Avatar Descriptor
 	
 	- Fix VRC3 Expressions
