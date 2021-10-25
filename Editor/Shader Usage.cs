@@ -46,8 +46,8 @@ namespace FACS01.Utilities
 
             for (int i = 0; i < all_shaders.Count; i++)
             {
-                string temp = String.Join("\n\t", mats_with_shader[i]);
-                EditorGUILayout.TextArea($"<color=cyan><b>{all_shaders[i]}</b></color>\n\t{temp}", FacsGUIStyles.helpbox);
+                string temp = String.Join("\n", mats_with_shader[i]);
+                EditorGUILayout.TextArea($"<color=cyan><b>{all_shaders[i]}</b></color>\n{temp}", FacsGUIStyles.helpbox);
             }
             EditorGUILayout.EndScrollView();
         }
