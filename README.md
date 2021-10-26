@@ -5,21 +5,25 @@ Features:
 
 	- Load Bundle 2019
 	
+	- Batch Load Bundles
+	
+	- Shader Detector
+	
+	- Fav Folder Importer
+	
+	- Better Avatar Bounds
+	
 	- Easy Shader Reassign
 	
 	- Fix Animations
 	
 	- Remove Missing Scripts
-	
-	- Shader Detector
-	
-	- Better Avatar Bounds
+
+	- Get Latest VRC SDK
 	
 	- Fix VRC3 Avatar Descriptor
 	
 	- Fix VRC3 Expressions
-	
-	- Get Latest VRC SDK
 	
 	- VRC Custom Preview Images (thanks to/using SixLabors.ImageSharp)
 
