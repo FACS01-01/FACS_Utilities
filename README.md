@@ -15,9 +15,11 @@ Features:
 	
 	- Easy Shader Reassign
 	
-	- Fix Animations
+	- Fix Animations Missing Paths
 	
 	- Remove Missing Scripts
+	
+	- Copy Components
 
 	- Get Latest VRC SDK
 	
