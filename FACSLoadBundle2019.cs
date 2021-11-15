@@ -1,6 +1,4 @@
-﻿//code by FACS01
-
-#if (VRC_SDK_VRCSDK2 || VRC_SDK_VRCSDK3)
+﻿#if (VRC_SDK_VRCSDK2 || VRC_SDK_VRCSDK3)
 using VRC.Core;
 #endif
 using UnityEngine;
@@ -27,14 +25,7 @@ namespace FACS01.Utilities
         private AssetBundle LoadedAssetBundle;
         public IEnumerator coroutine;
 
-        public bool runOnPlayMode = true;
-        public bool attachAsChild = true;
-
         public void OnEnable()
-        {
-            if (runOnPlayMode) { RunLB(); }
-        }
-        public void RunLB()
         {
             coroutine = LoadBundle();
             StartCoroutine(coroutine);
@@ -43,28 +34,25 @@ namespace FACS01.Utilities
         {
             if (coroutine != null)
             {
-                Debug.LogWarning($"<color=cyan>LoadBundle</color> routine <color=red>interrupted</color>.\n");
                 StopCoroutine(coroutine);
                 coroutine = null;
             }
             if (avatarInstance != null)
             {
-                Debug.Log($"Removing Instance of <color=green>{avatarInstance.name}</color>\n");
-                if (Application.isPlaying) { Object.Destroy(avatarInstance); }
-                else { Object.DestroyImmediate(avatarInstance); }
+                Object.Destroy(avatarInstance);
                 avatarInstance = null;
             }
             if (LoadedAssetBundle != null)
             {
-                Debug.Log($"Unloading <color=cyan>AssetBundle</color> {AssetSource}\n");
                 LoadedAssetBundle.Unload(true);
                 LoadedAssetBundle = null;
             }
             DidAssetLoad = false;
+            
         }
         public IEnumerator LoadBundle()
         {
-            if (String.IsNullOrEmpty(AssetSource)) { yield break; }
+            if (AssetSource == "") { yield break; }
 
             bool isURL = AssetSource.StartsWith("http");
 
@@ -97,8 +85,7 @@ namespace FACS01.Utilities
                 {
                     if (asset.EndsWith(".prefab"))
                     {
-                        if (attachAsChild) { avatarInstance = Instantiate((GameObject)LoadedAssetBundle.LoadAsset(asset), this.transform, false); }
-                        else { avatarInstance = Instantiate((GameObject)LoadedAssetBundle.LoadAsset(asset)); }
+                        avatarInstance = Instantiate((GameObject)LoadedAssetBundle.LoadAsset(asset), this.transform, false);
                         avatarInstance.transform.position = new Vector3(0, 0, 0);
 
 #if VRC_SDK_VRCSDK3
@@ -107,7 +94,8 @@ namespace FACS01.Utilities
 #elif VRC_SDK_VRCSDK2
                         DestroyImmediate(avatarInstance.GetComponent<PipelineManager>());
 #endif
-                        if (Name != "")
+
+                        if (!String.IsNullOrWhiteSpace(Name))
                         {
                             avatarInstance.name = Name;
                         }
@@ -134,14 +122,12 @@ namespace FACS01.Utilities
             else
             {
                 string sceneName = Path.GetFileNameWithoutExtension(scenePaths[0]);
-                SceneManager.LoadScene(sceneName);
+                SceneManager.LoadScene(sceneName, LoadSceneMode.Additive);
 
                 DidAssetLoad = true;
 
                 Debug.Log($"<color=green>{sceneName}</color> was loaded from <color=cyan>AssetBundle</color>!\n");
             }
-
-            coroutine = null;
         }
         public (List<string>, List<List<string>>) getShaderUsage()
         {
