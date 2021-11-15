@@ -11,9 +11,12 @@ namespace FACS01.Utilities
     public class FavFolderImporter : EditorWindow
     {
         private static FACSGUIStyles FacsGUIStyles;
-        private static string configParam = "FavFolderImporter.FavFolders:";
         private static List<string> savedFolders;
         private static int savedFoldersSize;
+
+        private static readonly string SavedData_file = "savedData.txt";
+        private static readonly string SavedData_header = "FACS Utilities - Configs";
+        private static readonly string SavedData_configParam = "FavFolderImporter.FavFolders:";
 
         [MenuItem("FACS Utils/Misc/Fav Folder Importer", false, 1000)]
         public static void ShowWindow()
@@ -25,7 +28,7 @@ namespace FACS01.Utilities
             AssetDatabase.importPackageCompleted += OnImportPackageCompleted;
             AssetDatabase.importPackageFailed += OnImportPackageFailed;
 
-            string gettingsavedfolders = SavedDataManager.ReadSavedData(configParam);
+            string gettingsavedfolders = SavedDataManager.ReadSavedData("", SavedData_file, SavedData_header, SavedData_configParam, true);
             if (gettingsavedfolders != "") { savedFolders = new List<string>(gettingsavedfolders.Split(new string[] { "||" }, StringSplitOptions.None)); }
             else { savedFolders = new List<string>(); }
             savedFoldersSize = savedFolders.Count;
@@ -129,8 +132,8 @@ namespace FACS01.Utilities
             FacsGUIStyles = null;
             AssetDatabase.importPackageCompleted -= OnImportPackageCompleted;
             AssetDatabase.importPackageFailed -= OnImportPackageFailed;
-            if (savedFolders.Any()) { SavedDataManager.WriteSavedData(configParam, String.Join("||", savedFolders)); }
-            else { SavedDataManager.WriteSavedData(configParam, ""); }
+            if (savedFolders.Any()) { SavedDataManager.WriteSavedData("", SavedData_file, SavedData_header, SavedData_configParam, String.Join("||", savedFolders)); }
+            else { SavedDataManager.WriteSavedData("", SavedData_file, SavedData_header, SavedData_configParam, ""); }
         }
     }
 }
