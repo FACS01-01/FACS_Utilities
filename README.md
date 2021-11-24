@@ -3,7 +3,7 @@ Tools to repair common errors on Unity/VRChat files
 
 Features:
 
-	- Load Bundle 2019
+	- FACS Load Bundle
 	
 	- Batch Load Bundles
 	
@@ -23,9 +23,7 @@ Features:
 
 	- Get Latest VRC SDK
 	
-	- Fix VRC3 Avatar Descriptor
-	
-	- Fix VRC3 Expressions
+	- Fix VRC SDK3 Scripts
 	
 	- VRC Custom Preview Images (thanks to/using SixLabors.ImageSharp)
 
