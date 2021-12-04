@@ -16,6 +16,7 @@ namespace FACS01.Utilities
         private static (Type, bool)[] copyComponents;
         private static Type[] copyComponentTypes;
         private static int copyMissing = 0;
+        private static int TotalComponents = 0;
 
         [MenuItem("FACS Utils/Repair Avatar/Copy Components", false, 1005)]
         public static void ShowWindow()
@@ -121,15 +122,40 @@ namespace FACS01.Utilities
                 CopyComponentsSerializedData(copyFrom.transform, copyTo.transform);
             }
         }
-        private void CopyComponentsSerializedData(Transform t_from, Transform t_to)
+        private void ComponentArrayAdder(List<(Component[], Component[])> ComponentArrayTuples, Transform t_from, Transform t_to)
         {
             foreach (Type type in copyComponentTypes)
             {
                 Component[] from = t_from.GetComponents(type);
                 Component[] to = t_to.GetComponents(type);
+                ComponentArrayTuples.Add((from, to));
+                TotalComponents += from.Length;
+            }
+            if (t_from.childCount > 0)
+            {
+                foreach (Transform child_from in t_from)
+                {
+                    Transform child_to = t_to.Find(child_from.name);
+                    if (child_to != null) { ComponentArrayAdder(ComponentArrayTuples, child_from, child_to); }
+                }
+            }
+        }
+        private void CopyComponentsSerializedData(Transform t_from, Transform t_to)
+        {
+            List<(Component[], Component[])> ComponentArrayTuples = new List<(Component[], Component[])>();
+            TotalComponents = 0;
+            ComponentArrayAdder(ComponentArrayTuples, t_from, t_to);
+            int componentCount = 0;
 
+            int ComponentArrayTuplesCount = ComponentArrayTuples.Count;
+            for (int j = 0; j < ComponentArrayTuplesCount; j++)
+            {
+                Component[] from = ComponentArrayTuples[j].Item1;
+                Component[] to = ComponentArrayTuples[j].Item2;
                 for (int i = 0; i < from.Length; i++)
                 {
+                    componentCount++;
+                    EditorUtility.DisplayProgressBar("Copy Components", "Please wait...", (float)componentCount / TotalComponents);
                     var comp_from = from[i]; var comp_to = to[i];
                     SerializedObject SO_from = new SerializedObject(comp_from);
                     SerializedObject SO_to = new SerializedObject(comp_to);
@@ -144,14 +170,7 @@ namespace FACS01.Utilities
                     SO_to.ApplyModifiedProperties();
                 }
             }
-            if (t_from.childCount > 0)
-            {
-                foreach (Transform child_from in t_from)
-                {
-                    Transform child_to = t_to.Find(child_from.name);
-                    if (child_to != null) { CopyComponentsSerializedData(child_from, child_to); }
-                }
-            }
+            EditorUtility.ClearProgressBar();
         }
         private void CopySerialized(SerializedProperty from_iterator, SerializedObject to)
         {
@@ -172,6 +191,7 @@ namespace FACS01.Utilities
                     {
                         try
                         {
+                            if (from_iterator.name == "m_CorrespondingSourceObject") { return; }
                             Component tmp = (Component)from_iterator.objectReferenceValue;
                             if (tmp != null)
                             {
@@ -206,7 +226,8 @@ namespace FACS01.Utilities
                                 {
                                     string assetpath = AssetDatabase.GUIDToAssetPath(guid);
                                     if (!String.IsNullOrEmpty(assetpath)) { to.CopyFromSerializedProperty(from_iterator); }
-                                    else { Debug.LogWarning($"[<color=green>CopySerialized</color>] Asset file in CopyFrom with GUID not found in project: {tmp2.name} | {guid}"); }
+                                    else if (uint.Parse(guid) != 0) { Debug.LogWarning($"[<color=green>CopySerialized</color>] Asset file in CopyFrom with GUID not found in project: [{tmp2.GetType().Name}] {tmp2.name} | {guid}"); }
+                                    else { Debug.Log($"[<color=green>CopySerialized</color>] Skipping Asset file in CopyFrom with no GUID: [{tmp2.GetType().Name}] {tmp2.name}"); }
                                 }
                                 else
                                 {
@@ -300,7 +321,7 @@ namespace FACS01.Utilities
 
             List<Type> tmp_components = new List<Type>();
             List<(Type, bool)> tmp_components2 = new List<(Type, bool)>();
-            Transform[] gos_t = copyFrom.GetComponentsInChildren<Transform>();
+            Transform[] gos_t = copyFrom.GetComponentsInChildren<Transform>(true);
             foreach (Transform t in gos_t)
             {
                 Component[] components = t.GetComponents(typeof(Component));
@@ -313,14 +334,13 @@ namespace FACS01.Utilities
                     }
                     else
                     {
-                        copyMissing++;//null component
+                        copyMissing++;
                     }
                 }
             }
             if (tmp_components2.Any())
             {
-                tmp_components2.Add((typeof(GameObject),false));
-                tmp_components2.Sort((x, y) => x.Item1.Name.CompareTo(y.Item1.Name));
+                tmp_components2.Insert(0, (typeof(GameObject), false));
                 copyComponents = tmp_components2.ToArray();
             }
             else { Debug.LogWarning($"No components to copy from {copyFrom.name}"); }
