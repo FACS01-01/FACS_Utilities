@@ -96,7 +96,7 @@ namespace FACS01.Utilities
                 yield break;
             }
 
-            bool isURL = Uri.TryCreate(AssetSource, UriKind.Absolute, out Uri uriResult) && uriResult.Scheme == Uri.UriSchemeHttp;
+            bool isURL = Uri.TryCreate(AssetSource, UriKind.Absolute, out Uri uriResult) && (uriResult.Scheme == Uri.UriSchemeHttps || uriResult.Scheme == Uri.UriSchemeHttp);
 
             if (isURL)
             {
@@ -137,7 +137,7 @@ namespace FACS01.Utilities
                     if (asset.EndsWith(".prefab"))
                     {
                         avatarInstance = Instantiate((GameObject)LoadedAssetBundle.LoadAsset(asset), this.transform, false);
-                        avatarInstance.transform.position = new Vector3(0, 0, 0);
+                        avatarInstance.transform.localPosition = new Vector3(0, 0, 0);
 
 #if VRC_SDK_VRCSDK3
                         DestroyImmediate(avatarInstance.GetComponent<PipelineSaver>());
@@ -174,7 +174,8 @@ namespace FACS01.Utilities
 
             else
             {
-                if (!Application.isPlaying) {
+                if (!Application.isPlaying)
+                {
                     OnDisable();
                     Debug.LogWarning($"<color=cyan>Load Bundle</color> can't load scenes on Edit Mode. Please enter Play Mode.\n");
                     yield break;
@@ -185,7 +186,7 @@ namespace FACS01.Utilities
                 SceneManager.LoadScene(worldSceneName, LoadSceneMode.Additive);
                 yield return null;
 
-#if VRC_SDK_VRCSDK2
+#if VRC_SDK_VRCSDK2 || VRC_SDK_VRCSDK3
                 List<GameObject> rootObjects = new List<GameObject>();
                 Scene scene = SceneManager.GetSceneByName(worldSceneName);
                 scene.GetRootGameObjects(rootObjects);
@@ -211,7 +212,7 @@ namespace FACS01.Utilities
                 {
                     foreach (Material mat in rend.sharedMaterials)
                     {
-                        if (!materialList.Contains(mat) && mat != null)
+                        if (!materialList.Contains(mat) && mat)
                         {
                             materialList.Add(mat);
                         }
