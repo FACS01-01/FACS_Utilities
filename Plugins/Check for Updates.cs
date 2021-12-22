@@ -48,12 +48,11 @@ namespace FACS01.Utilities
             using (WebClient wc = new WebClient())
             { latestVersion = wc.DownloadString("https://raw.githubusercontent.com/FACS01-01/FACS_Utilities/main/version.txt"); }
             string[] latestVersionSplit = latestVersion.Split('.');
+            decimal ver = int.Parse(myVersionSplit[0]) * 365.25m + int.Parse(myVersionSplit[1]) * 30.4375m + int.Parse(myVersionSplit[2]);
+            decimal latestver = int.Parse(latestVersionSplit[0]) * 365.25m + int.Parse(latestVersionSplit[1]) * 30.4375m + int.Parse(latestVersionSplit[2]);
 
-            if (myVersionSplit[0]==latestVersionSplit[0] && myVersionSplit[1]==latestVersionSplit[1] && myVersionSplit[2]==latestVersionSplit[2])
+            if (ver == latestver)
             { Debug.Log($"[<color=cyan>FACS Utilities</color>] Tools are up to date!"); return; }
-
-            decimal ver = int.Parse(myVersionSplit[0])*365.25m + int.Parse(myVersionSplit[1])*30.4375m + int.Parse(myVersionSplit[2]);
-            decimal latestver = int.Parse(latestVersionSplit[0])*365.25m + int.Parse(latestVersionSplit[1])*30.4375m + int.Parse(latestVersionSplit[2]);
 
             if (ver > latestver)
             { Debug.LogWarning($"[<color=cyan>FACS Utilities</color>] Are you a time traveller? Tools version in higher than source!"); return; }
