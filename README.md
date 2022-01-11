@@ -25,6 +25,8 @@ Features:
 	
 	- Fix VRC SDK3 Scripts
 	
+	- VRC Control Panel Fix
+	
 	- VRC Custom Preview Images (thanks to/using SixLabors.ImageSharp)
 
 
