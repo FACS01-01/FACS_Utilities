@@ -55,7 +55,7 @@ namespace FACS01.Utilities
             { Debug.Log($"[<color=cyan>FACS Utilities</color>] Tools are up to date!"); return; }
 
             if (ver > latestver)
-            { Debug.LogWarning($"[<color=cyan>FACS Utilities</color>] Are you a time traveller? Tools version in higher than source!"); return; }
+            { Debug.LogWarning($"[<color=cyan>FACS Utilities</color>] Are you a time traveller? Tools version is higher than source!"); return; }
 
             bool update;
             string lastFullReinstall = "";
