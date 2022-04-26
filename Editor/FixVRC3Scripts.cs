@@ -28,7 +28,8 @@ namespace FACS01.Utilities
             { "VRCExpressionsMenu", new string[] { "controls" } },
             { "VRCPlayableLayerControl", new string[] { "layer", "goalWeight", "blendDuration" } },//**
             { "VRCSpatialAudioSource", new string[] { "Gain", "Far", "Near", "VolumetricRadius", "EnableSpatialization", "UseAudioSourceVolumeCurve" } },
-            { "VRCStation", new string[] { "PlayerMobility", "canUseStationFromStation", "animatorController", "disableStationExit", "seated", "stationEnterPlayerLocation", "stationExitPlayerLocation", "controlsObject" } }
+            { "VRCStation", new string[] { "PlayerMobility", "canUseStationFromStation", "animatorController", "disableStationExit", "seated", "stationEnterPlayerLocation", "stationExitPlayerLocation", "controlsObject" } },
+			{ "VRCPhysBone", new string[] { "pull", "pullCurve", "spring", "springCurve", "stiffness", "stiffnessCurve", "immobile", "immobileCurve", "gravity", "gravityCurve", "gravityFalloff", "gravityFalloffCurve", "allowCollision", "radius", "radiusCurve", "colliders", "limitType", "maxAngleX", "maxAngleXCurve", "maxAngleZ", "maxAngleZCurve", "limitRotation", "limitRotationXCurve", "limitRotationYCurve", "limitRotationZCurve", "allowGrabbing", "allowPosing", "grabMovement", "maxStretch", "maxStretchCurve", "isAnimated", "parameter", "showGizmos", "boneOpacity", "limitOpacity"} }
         };
 
         private Dictionary<(string, string), string> VRCScriptsGUIDs;
@@ -37,6 +38,7 @@ namespace FACS01.Utilities
         private Dictionary<(string, string), (int, int)> GUIDsFixStats;
 
         private readonly string VRCSDK3Adll_path = "Assets/VRCSDK/Plugins/VRCSDK3A.dll";
+        private readonly string PhysBonedll_path = "Assets/VRCSDK/Plugins/VRC.SDK3.Dynamics.PhysBone.dll";
 
         private int fixedFilesCount;
         private string output_print;
@@ -266,6 +268,16 @@ namespace FACS01.Utilities
             string[] VRCScriptsNames = VRCScriptsAndParams.Keys.ToArray();
             Object[] VRCSDK3A_scripts = AssetDatabase.LoadAllAssetRepresentationsAtPath(VRCSDK3Adll_path);
             foreach (Object script in VRCSDK3A_scripts)
+            {
+                if (VRCScriptsNames.Contains(script.name) && AssetDatabase.TryGetGUIDAndLocalFileIdentifier(script, out string scriptGUID, out long scriptFileId))
+                {
+                    VRCScriptsGUIDs.Add((scriptGUID, scriptFileId.ToString()), script.name);
+                    //VRCScriptsNewAndOld.Add(((script.name, VRCScriptsAndParams[script.name]), scriptGUID, scriptFileId.ToString(), "", ""));
+                }
+            }
+
+            Object[] PhyBone_scripts = AssetDatabase.LoadAllAssetRepresentationsAtPath(PhysBonedll_path);
+            foreach (Object script in PhyBone_scripts)
             {
                 if (VRCScriptsNames.Contains(script.name) && AssetDatabase.TryGetGUIDAndLocalFileIdentifier(script, out string scriptGUID, out long scriptFileId))
                 {
