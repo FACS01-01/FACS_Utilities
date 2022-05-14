@@ -29,8 +29,8 @@ namespace FACS01.Utilities
             { "VRCPlayableLayerControl", new string[] { "layer", "goalWeight", "blendDuration" } },//**
             { "VRCSpatialAudioSource", new string[] { "Gain", "Far", "Near", "VolumetricRadius", "EnableSpatialization", "UseAudioSourceVolumeCurve" } },
             { "VRCStation", new string[] { "PlayerMobility", "canUseStationFromStation", "animatorController", "disableStationExit", "seated", "stationEnterPlayerLocation", "stationExitPlayerLocation", "controlsObject" } },
-			{ "VRCPhysBoneCollider", new string[] { "rootTransform", "shapeType", "insideBounds", "radius", "height", "position", "rotation" } },
-			{ "VRCPhysBone", new string[] { "pull", "pullCurve", "spring", "springCurve", "stiffness", "stiffnessCurve", "immobile", "immobileCurve", "gravity", "gravityCurve", "gravityFalloff", "gravityFalloffCurve", "allowCollision", "radius", "radiusCurve", "colliders", "limitType", "maxAngleX", "maxAngleXCurve", "maxAngleZ", "maxAngleZCurve", "limitRotation", "limitRotationXCurve", "limitRotationYCurve", "limitRotationZCurve", "allowGrabbing", "allowPosing", "grabMovement", "maxStretch", "maxStretchCurve", "isAnimated", "parameter", "showGizmos", "boneOpacity", "limitOpacity"} }
+			{ "VRCPhysBoneCollider", new string[] { "rootTransform", "shapeType", "insideBounds", "radius", "height", "position", "rotation", "bonesAsSpheres" } },
+			{ "VRCPhysBone", new string[] { "rootTransform", "ignoreTransforms", "endpointPosition", "multiChildType", "pull", "pullCurve", "spring", "springCurve", "stiffness", "stiffnessCurve", "immobileType", "immobile", "immobileCurve", "gravity", "gravityCurve", "gravityFalloff", "gravityFalloffCurve", "allowCollision", "radius", "radiusCurve", "colliders", "limitType", "maxAngleX", "maxAngleXCurve", "maxAngleZ", "maxAngleZCurve", "limitRotation", "limitRotationXCurve", "limitRotationYCurve", "limitRotationZCurve", "allowGrabbing", "allowPosing", "grabMovement", "maxStretch", "maxStretchCurve", "isAnimated", "parameter", "showGizmos", "boneOpacity", "limitOpacity"} }
         };
 
         private Dictionary<(string, string), string> VRCScriptsGUIDs;
