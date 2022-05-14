@@ -17,11 +17,14 @@ namespace FACS01.Utilities
         private static Type[] copyComponentTypes;
         private static int copyMissing = 0;
         private static int TotalComponents = 0;
+        private static Vector2 scroll;
+        private static EditorWindow window;
 
         [MenuItem("FACS Utils/Repair Avatar/Copy Components", false, 1005)]
         public static void ShowWindow()
         {
-            GetWindow(typeof(CopyComponents), false, "Copy Components", true);
+            window = GetWindow(typeof(CopyComponents), false, "Copy Components", true);
+            window.maxSize = new Vector2(500, 750);
         }
 
         public void OnGUI()
@@ -61,11 +64,16 @@ namespace FACS01.Utilities
             {
                 bool enable = false;
                 EditorGUILayout.LabelField($"<color=green><b>Available Components to Copy</b></color>:", FacsGUIStyles.helpbox);
+
+                scroll = EditorGUILayout.BeginScrollView(scroll, GUILayout.ExpandHeight(true));
                 for (int i = 0; i < copyComponents.Length; i++)
                 {
                     copyComponents[i].Item2 = GUILayout.Toggle(copyComponents[i].Item2, copyComponents[i].Item1.Name);
                     if (copyComponents[i].Item2) { enable = true; }
                 }
+                EditorGUILayout.EndScrollView();
+
+
                 EditorGUILayout.BeginHorizontal();
                 if (GUILayout.Button("Select All", FacsGUIStyles.button, GUILayout.Height(20))) { SelectAll(true); }
                 if (GUILayout.Button("Deselect All", FacsGUIStyles.button, GUILayout.Height(20))) { SelectAll(false); }
@@ -78,6 +86,8 @@ namespace FACS01.Utilities
                     RunCopy();
                     Debug.Log($"[<color=green>CopySerialized</color>] Finished copying components!");
                 }
+
+                GUILayout.FlexibleSpace();
             }
         }
         private void RunCopy()
