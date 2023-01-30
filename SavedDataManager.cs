@@ -26,12 +26,12 @@ namespace FACS01.Utilities
         }
         public static void PathCreate(string path)
         {
-            Debug.Log($"[<color=green>FACS SavedDataManager</color>] Creating FACS Utils saved data folder at: {path}");
+            Debug.Log($"[<color=cyan>FACS SavedDataManager</color>] Creating FACS Utils saved data folder at: {path}");
             Directory.CreateDirectory(path);
         }
         public static void FileCreate(string path, string header)
         {
-            Debug.Log($"[<color=green>FACS SavedDataManager</color>] Creating FACS Utils saved data file at: {path}");
+            Debug.Log($"[<color=cyan>FACS SavedDataManager</color>] Creating FACS Utils saved data file at: {path}");
             using (StreamWriter sw = File.CreateText(path))
             {
                 sw.WriteLine(header+"\n");
@@ -65,7 +65,7 @@ namespace FACS01.Utilities
                 lines = tmp.ToArray();
             }
             File.WriteAllLines(MainFolder + subfolder + "/" + file, lines);
-            Debug.Log($"[<color=green>FACS SavedDataManager</color>] Saving {configParam.Substring(0, configParam.Length - 1)}");
+            Debug.Log($"[<color=cyan>FACS SavedDataManager</color>] Saving {configParam.Substring(0, configParam.Length - 1)}");
         }
         public static string ReadSavedData(string subfolder, string file, string header, string configParam, bool createnew)
         {
@@ -75,7 +75,7 @@ namespace FACS01.Utilities
             var findConfigParam = lines.Where(o => o.StartsWith(configParam));
             if (findConfigParam.Any())
             {
-                Debug.Log($"[<color=green>FACS SavedDataManager</color>] Reading {configParam.Substring(0, configParam.Length - 1)}");
+                Debug.Log($"[<color=cyan>FACS SavedDataManager</color>] Reading {configParam.Substring(0, configParam.Length - 1)}");
                 return findConfigParam.First().Substring(configParam.Length).Replace("\n","");
             }
             else
@@ -85,7 +85,7 @@ namespace FACS01.Utilities
                     List<string> tmp = lines.ToList(); tmp.Add(configParam);
                     lines = tmp.ToArray();
                     File.WriteAllLines(MainFolder + subfolder + "/" + file, lines);
-                    Debug.Log($"[<color=green>FACS SavedDataManager</color>] Creating Saved Data for {configParam.Substring(0, configParam.Length - 1)}");
+                    Debug.Log($"[<color=cyan>FACS SavedDataManager</color>] Creating Saved Data for {configParam.Substring(0, configParam.Length - 1)}");
                 }
                 return "";
             }
@@ -104,7 +104,7 @@ namespace FACS01.Utilities
                 lines = tmp.ToArray();
 
                 File.WriteAllLines(MainFolder + subfolder + "/" + file, lines);
-                Debug.Log($"[<color=green>FACS SavedDataManager</color>] Deleting {configParam.Substring(0, configParam.Length - 1)}");
+                Debug.Log($"[<color=cyan>FACS SavedDataManager</color>] Deleting {configParam.Substring(0, configParam.Length - 1)}");
             }
         }
         public static List<string[]> ReadDictData(string subfolder, string file, string header, List<string> branch)
@@ -242,7 +242,7 @@ namespace FACS01.Utilities
 
             string[] resultlines = lines.ToArray();
             File.WriteAllLines(MainFolder + subfolder + "/" + file, resultlines);
-            //Debug.Log($"[<color=green>FACS SavedDataManager</color>] Saving data");
+            //Debug.Log($"[<color=cyan>FACS SavedDataManager</color>] Saving data");
         }
         public static void DeleteDictData(string subfolder, string file, string header, List<string[]> branch)
         {
@@ -294,7 +294,7 @@ namespace FACS01.Utilities
 
             string[] resultlines = lines.ToArray();
             File.WriteAllLines(MainFolder + subfolder + "/" + file, resultlines);
-            //Debug.Log($"[<color=green>FACS SavedDataManager</color>] Deleting data");
+            //Debug.Log($"[<color=cyan>FACS SavedDataManager</color>] Deleting data");
         }
     }
 }

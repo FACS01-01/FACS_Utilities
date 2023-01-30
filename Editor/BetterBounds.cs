@@ -84,6 +84,7 @@ namespace FACS01.Utilities
                         }
                         EditorUtility.ClearProgressBar();
                         if (!avatar_IsNotPartOfPrefabAsset) PrefabUtility.SavePrefabAsset(avatar);
+                        Undo.CollapseUndoOperations(Undo.GetCurrentGroup());
                         Debug.Log($"[<color=green>Better Bounds</color>] Finished applying Exact Bounds to: {avatar.name}\n");
                     }
                     if (GUILayout.Button("Loose Bounds", FacsGUIStyles.button, GUILayout.Height(40)))
@@ -106,16 +107,11 @@ namespace FACS01.Utilities
                         }
                         foreach (var l in groups.Values) LooseBounds(l);
                         if (!avatar_IsNotPartOfPrefabAsset) PrefabUtility.SavePrefabAsset(avatar);
+                        Undo.CollapseUndoOperations(Undo.GetCurrentGroup());
                         Debug.Log($"[<color=green>Better Bounds</color>] Finished applying Loose Bounds to: {avatar.name}\n");
                     }
                 }
             }
-        }
-
-        private List<T> casto<T>()
-        {
-            var a = new List<T>();
-            return a;
         }
 
         private void SaveChangesOnPrefabInstance(Object obj)

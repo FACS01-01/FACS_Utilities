@@ -68,7 +68,7 @@ namespace FACS01.Utilities
                     bundleFileRequest.assetBundle.Unload(true);
                 }
                 coroutine = null; bundleWebRequest = null; bundleFileRequest = null;
-                Debug.Log($"Aborting <color=cyan>AssetBundle</color> from: {AssetSource}\n");
+                Debug.Log($"[<color=green>FACS Load Bundle</color>] Aborting <color=cyan>AssetBundle</color> from: {AssetSource}\n");
             }
             if (avatarInstance != null)
             {
@@ -84,14 +84,14 @@ namespace FACS01.Utilities
             {
                 LoadedAssetBundle.Unload(true);
                 LoadedAssetBundle = null;
-                Debug.Log($"Unloading <color=cyan>AssetBundle</color> from: {AssetSource}\n");
+                Debug.Log($"[<color=green>FACS Load Bundle</color>] Unloading <color=cyan>AssetBundle</color> from: {AssetSource}\n");
             }
         }
         public IEnumerator LoadBundle()
         {
             if (String.IsNullOrWhiteSpace(AssetSource))
             {
-                Debug.LogWarning($"Empty Bundle Source in <color=cyan>LoadBundle</color>\n");
+                Debug.LogWarning($"[<color=green>FACS Load Bundle</color>] Empty Bundle Source in <color=cyan>LoadBundle</color>\n");
                 coroutine = null;
                 yield break;
             }
@@ -100,14 +100,14 @@ namespace FACS01.Utilities
 
             if (isURL)
             {
-                Debug.Log($"Getting <color=cyan>AssetBundle</color> from <color=green>URL</color>: {AssetSource}\nPlease wait a moment...");
+                Debug.Log($"[<color=green>FACS Load Bundle</color>] Getting <color=cyan>AssetBundle</color> from <color=green>URL</color>: {AssetSource}\nPlease wait a moment...");
                 bundleWebRequest = UnityWebRequestAssetBundle.GetAssetBundle(AssetSource);
                 yield return bundleWebRequest.SendWebRequest();
                 LoadedAssetBundle = DownloadHandlerAssetBundle.GetContent(bundleWebRequest);
             }
             else if (File.Exists(AssetSource))
             {
-                Debug.Log($"Getting <color=cyan>AssetBundle</color> from local <color=green>file</color>: {AssetSource}\n");
+                Debug.Log($"[<color=green>FACS Load Bundle</color>] Getting <color=cyan>AssetBundle</color> from local <color=green>file</color>: {AssetSource}\n");
 
                 bundleFileRequest = AssetBundle.LoadFromFileAsync(AssetSource);
 
@@ -117,15 +117,15 @@ namespace FACS01.Utilities
             }
             else
             {
-                Debug.LogWarning($"Invalid URL or File path for <color=cyan>LoadBundle</color>: {AssetSource}");
+                Debug.LogWarning($"[<color=green>FACS Load Bundle</color>] Invalid URL or File path for <color=cyan>LoadBundle</color>: {AssetSource}");
                 coroutine = null;
                 yield break;
             }
 
             if (LoadedAssetBundle == null)
             {
-                if (isURL) Debug.LogError($"Failed to load <color=cyan>AssetBundle</color> from URL: {AssetSource}\n");
-                else Debug.LogError($"Failed to load <color=cyan>AssetBundle</color> from file: {AssetSource}\n");
+                if (isURL) Debug.LogError($"[<color=green>FACS Load Bundle</color>] Failed to load <color=cyan>AssetBundle</color> from URL: {AssetSource}\n");
+                else Debug.LogError($"[<color=green>FACS Load Bundle</color>] Failed to load <color=cyan>AssetBundle</color> from file: {AssetSource}\n");
                 coroutine = null;
                 yield break;
             }
@@ -162,13 +162,13 @@ namespace FACS01.Utilities
                         }
 
 
-                        Debug.Log($"Prefab <color=green>{avatarInstance.name}</color> was loaded from <color=cyan>AssetBundle</color>!\n");
+                        Debug.Log($"[<color=green>FACS Load Bundle</color>] Prefab <color=green>{avatarInstance.name}</color> was loaded from <color=cyan>AssetBundle</color>!\n");
                         coroutine = null;
                         yield break;
                     }
                 }
 
-                Debug.LogWarning($"Didn't find any .prefab or scene to load from <color=cyan>LoadBundle</color>: {AssetSource}");
+                Debug.LogWarning($"[<color=green>FACS Load Bundle</color>] Didn't find any .prefab or scene to load from <color=cyan>LoadBundle</color>: {AssetSource}");
                 coroutine = null;
             }
 
@@ -177,7 +177,7 @@ namespace FACS01.Utilities
                 if (!Application.isPlaying)
                 {
                     OnDisable();
-                    Debug.LogWarning($"<color=cyan>Load Bundle</color> can't load scenes on Edit Mode. Please enter Play Mode.\n");
+                    Debug.LogWarning($"[<color=green>FACS Load Bundle</color>] Can't load scenes on Edit Mode. Please enter Play Mode.\n");
                     yield break;
                 }
 
@@ -197,7 +197,7 @@ namespace FACS01.Utilities
                 }
 #endif
 
-                Debug.Log($"Scene <color=green>{worldSceneName}</color> was loaded from <color=cyan>AssetBundle</color>!\n");
+                Debug.Log($"[<color=green>FACS Load Bundle</color>] Scene <color=green>{worldSceneName}</color> was loaded from <color=cyan>AssetBundle</color>!\n");
                 coroutine = null;
             }
         }
