@@ -18,7 +18,7 @@ namespace FACS01.Utilities
         private static readonly string SavedData_header = "FACS Utilities - Configs";
         private static readonly string SavedData_configParam = "FavFolderImporter.FavFolders:";
 
-        [MenuItem("FACS Utils/Misc/Fav Folder Importer", false, 1000)]
+        [MenuItem("FACS Utils/Misc/Fav Folder Importer", false, 1003)]
         public static void ShowWindow()
         {
             GetWindow(typeof(FavFolderImporter), false, "Fav Folder Importer", true);
@@ -42,8 +42,8 @@ namespace FACS01.Utilities
             EditorGUILayout.LabelField($"<color=cyan><b>Fav Folder Importer</b></color>\n\n" +
                 $"Imports all Unity Packages in your selected folder automatically (overwritting pre existing files).\n" +
                 $"Your saved folders are remembered across all projects.\n" +
-                $"Packages are imported in alphabetical order. Consider it if you have packages with dependencies between them.\n" +
-                $"Files starting with \"<b>.</b>\" aren't imported.\n", FacsGUIStyles.helpbox);
+                $"Packages are imported in alphabetical order, consider it if you have packages with dependencies between them.\n" +
+                $"Packages starting with \"<b>.</b>\" aren't imported.\n", FacsGUIStyles.helpbox);
 
             if (savedFoldersSize>0)
             {
@@ -89,17 +89,17 @@ namespace FACS01.Utilities
                                 }
                                 else
                                 {
-                                    Debug.LogWarning($"[<color=green>FavFolderImporter</color>] All Unity Packages in folder are marked not to be imported: {folderPath}");
+                                    Debug.LogWarning($"[<color=green>Fav Folder Importer</color>] All Unity Packages in folder are marked not to be imported: {folderPath}\n");
                                 }
                             }
                             else
                             {
-                                Debug.LogWarning($"[<color=green>FavFolderImporter</color>] Selected folder doesn't have any Unity Package: {folderPath}");
+                                Debug.LogWarning($"[<color=green>Fav Folder Importer</color>] Selected folder doesn't have any Unity Package: {folderPath}\n");
                             }
                         }
                         else
                         {
-                            Debug.LogWarning($"[<color=green>FavFolderImporter</color>] Selected folder no longer exist: {folderPath}");
+                            Debug.LogWarning($"[<color=green>Fav Folder Importer</color>] Selected folder no longer exist: {folderPath}\n");
                         }
                     }
                     GUILayout.EndHorizontal();
@@ -115,17 +115,17 @@ namespace FACS01.Utilities
                     {
                         savedFolders.Add(folderPath); savedFoldersSize++;
                     }
-                    else { Debug.LogWarning($"[<color=green>FavFolderImporter</color>] Selected folder already listed: {folderPath}"); }
+                    else { Debug.LogWarning($"[<color=green>Fav Folder Importer</color>] Selected folder already listed: {folderPath}\n"); }
                 }
             }
         }
         private static void OnImportPackageCompleted(string packagename)
         {
-            Debug.Log($"[<color=green>FavFolderImporter</color>] Imported package: {packagename}");
+            Debug.Log($"[<color=green>Fav Folder Importer</color>] Imported package: {packagename}\n");
         }
         private static void OnImportPackageFailed(string packagename, string errormessage)
         {
-            Debug.Log($"[<color=green>FavFolderImporter</color>] Failed importing package: {packagename} with error: {errormessage}");
+            Debug.Log($"[<color=green>Fav Folder Importer</color>] Failed importing package: {packagename} with error: {errormessage}\n");
         }
         void OnDisable()
         {
