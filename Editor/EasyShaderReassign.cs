@@ -11,7 +11,7 @@ namespace FACS01.Utilities
 {
     public class EasyShaderReassign : EditorWindow
     {
-        public DefaultAsset folderWithMaterials;
+        private DefaultAsset folderWithMaterials;
         private static FACSGUIStyles FacsGUIStyles;
         private List<(string, string, List<(Material, string)>)> OldShaders;
         private bool[] OldFoldOuts;
@@ -23,35 +23,29 @@ namespace FACS01.Utilities
         private Tuple<string, string, string>[] GoodResults;
         private Vector2 scrollPos;
 
-        [MenuItem("FACS Utils/Repair Avatar/Easy Shader Reassign", false, 1001)]
-        public static void ShowWindow2()
+        [MenuItem("FACS Utils/Repair Avatar/Easy Shader Reassign", false, 1000)]
+        public static void ShowWindow()
         {
-            GetWindow(typeof(EasyShaderReassign), false, "Easy Shader Reassign", true);
+            var window = GetWindow(typeof(EasyShaderReassign), false, "Easy Shader Reassign", true);
+            window.maxSize = new Vector2(1000, 700); window.minSize = new Vector2(160, 160);
+            window.autoRepaintOnSceneChange = true;
         }
+
         public void OnGUI()
         {
             if (FacsGUIStyles == null) { FacsGUIStyles = new FACSGUIStyles(); }
-
-            EditorGUILayout.LabelField($"<color=cyan><b>Easy Shader Reassign</b></color>\n\nScans the selected Materials folder and helps you assign the correct shaders to broken materials.\n", FacsGUIStyles.helpbox);
-            folderWithMaterials = (DefaultAsset)EditorGUILayout.ObjectField(folderWithMaterials, typeof(DefaultAsset), false, GUILayout.Height(50));
             FacsGUIStyles.helpbox.alignment = TextAnchor.MiddleCenter;
+            EditorGUILayout.LabelField($"<color=cyan><b>Easy Shader Reassign</b></color>\n\n" +
+                $"Scans the selected Materials folder and helps you assign the correct shaders to broken materials.\n", FacsGUIStyles.helpbox);
 
-            if (GUILayout.Button("Scan!", FacsGUIStyles.button, GUILayout.Height(40)))
-            {
-                if (folderWithMaterials != null)
-                {
-                    Debug.Log("EASY SHADER REASSIGN - BEGIN FIRST SCAN");
-                    RunFix();
-                    Debug.Log("EASY SHADER REASSIGN - FIRST SCAN FINISHED");
-                }
-                else
-                {
-                    ShowNotification(new GUIContent("Empty field?"));
-                    OnDestroy();
-                }
-            }
+            EditorGUI.BeginChangeCheck();
+            folderWithMaterials = (DefaultAsset)EditorGUILayout.ObjectField(folderWithMaterials, typeof(DefaultAsset), false, GUILayout.Height(40));
+            if (EditorGUI.EndChangeCheck() || (!folderWithMaterials && (OldShaders != null || GoodShaders != null))) NullVars();
+            if (folderWithMaterials && GUILayout.Button("Scan!", FacsGUIStyles.button, GUILayout.Height(40))) GetMaterials();
+
             if (OldShaders != null || GoodShaders != null)
             {
+                bool newShader = false;
                 FacsGUIStyles.helpbox.alignment = TextAnchor.MiddleLeft;
                 scrollPos = EditorGUILayout.BeginScrollView(scrollPos);
                 if (OldShaders != null)
@@ -61,9 +55,10 @@ namespace FACS01.Utilities
                         EditorGUILayout.LabelField(OldResults[i].Item1, FacsGUIStyles.helpbox);
                         EditorGUILayout.BeginHorizontal();
                         OldDropDowns[i].Display(FacsGUIStyles.dropdownbutton);
-                        if (OldDropDowns[i].m_Shader != null && GUILayout.Button("Reset", FacsGUIStyles.buttonSmall, GUILayout.Height(18), GUILayout.Width(43)))
+                        if (OldDropDowns[i].m_Shader != null)
                         {
-                            OldDropDowns[i].m_Shader = null;
+                            newShader = true;
+                            if (GUILayout.Button("Reset", FacsGUIStyles.buttonSmall, GUILayout.Height(18), GUILayout.Width(43))) OldDropDowns[i].m_Shader = null;
                         }
                         EditorGUILayout.EndHorizontal();
                         OldFoldOuts[i] = EditorGUILayout.Foldout(OldFoldOuts[i], OldResults[i].Item2, true);
@@ -85,6 +80,7 @@ namespace FACS01.Utilities
                         {
                             GoodDropDowns[i].m_Shader = null;
                         }
+                        if (GoodDropDowns[i].m_Shader != null) newShader = true;
                         EditorGUILayout.EndHorizontal();
                         GoodFoldOuts[i] = EditorGUILayout.Foldout(GoodFoldOuts[i], GoodResults[i].Item2, true);
                         if (GoodFoldOuts[i])
@@ -96,21 +92,18 @@ namespace FACS01.Utilities
                 }
                 EditorGUILayout.EndScrollView();
                 FacsGUIStyles.helpbox.alignment = TextAnchor.MiddleCenter;
-                if (GUILayout.Button("Apply Shaders!", FacsGUIStyles.button, GUILayout.Height(40)))
+                if (newShader && GUILayout.Button("Apply Shaders!", FacsGUIStyles.button, GUILayout.Height(40)))
                 {
-                    Debug.Log("EASY SHADER REASSIGN - BEGIN APPLY SHADERS");
-                    bool matsfixed = false;
                     if (OldShaders != null)
                     {
                         for (int i = 0; i < OldShaders.Count; i++)
                         {
                             if (OldDropDowns[i].m_Shader != null)
                             {
-                                matsfixed = true;
                                 foreach (var mat in OldShaders[i].Item3)
                                 {
                                     Material editedMat = mat.Item1;
-                                    Undo.RegisterCompleteObjectUndo(editedMat, "Shader Reassign");
+                                    Undo.RecordObject(editedMat, "Shader Reassign");
                                     editedMat.shader = OldDropDowns[i].m_Shader;
                                 }
                             }
@@ -122,37 +115,32 @@ namespace FACS01.Utilities
                         {
                             if (GoodDropDowns[i].m_Shader != null)
                             {
-                                matsfixed = true;
                                 foreach (var mat in GoodShaders[i].Item3)
                                 {
                                     Material editedMat = mat.Item1;
-                                    Undo.RegisterCompleteObjectUndo(editedMat, "Shader Reassign");
+                                    Undo.RecordObject(editedMat, "Shader Reassign");
                                     editedMat.shader = GoodDropDowns[i].m_Shader;
                                 }
                             }
                         }
                     }
-                    Debug.Log("EASY SHADER REASSIGN - APPLY SHADERS FINISHED");
-                    if (matsfixed)
-                    {
-                        RunFix();
-                    }
-                    else
-                    {
-                        ShowNotification(new GUIContent("No Shader Selected?"));
-                    }
+                    Undo.CollapseUndoOperations(Undo.GetCurrentGroup());
+                    Debug.Log($"[<color=green>Easy Shader Reassign</color>] Finished applying shaders!\n");
+                    GetMaterials();
                 }
             }
         }
-        private void RunFix()
+
+        private void GetMaterials()
         {
-            Nulls();
+            NullVars();
             OldShaders = new List<(string, string, List<(Material, string)>)>();
             GoodShaders = new List<(string, string, List<(Material, string)>)>();
             FindOldShaders(AssetDatabase.GetAssetPath(folderWithMaterials));
             ListMaterials();
             Cleanup();
         }
+
         private void Cleanup()
         {
             for (int i = 0; i < OldShaders.Count(); i++)
@@ -199,6 +187,7 @@ namespace FACS01.Utilities
                 }
             }
         }
+
         private void ListMaterials()
         {
             string[] materialPaths = Directory.GetFiles(AssetDatabase.GetAssetPath(folderWithMaterials), "*.mat", SearchOption.AllDirectories);
@@ -300,10 +289,11 @@ namespace FACS01.Utilities
             }
             else
             {
-                Debug.LogWarning($"No material found in selected folder: {AssetDatabase.GetAssetPath(folderWithMaterials)}");
+                Debug.LogWarning($"[<color=green>Easy Shader Reassign</color>] No material found in selected folder: {AssetDatabase.GetAssetPath(folderWithMaterials)}\n");
             }
             
         }
+
         private void FindOldShaders(string matsPath)
         {
             string AssetsPath = matsPath.Substring(0, matsPath.LastIndexOf("/")) + "/";
@@ -358,21 +348,23 @@ namespace FACS01.Utilities
                 }
                 if (!OldShaders.Any())
                 {
-                    Debug.LogWarning($"No valid shader found in Shader folder: {shadersPath}.\nIf all materials were paired to a shader successfully, you can ignore this warning.");
+                    Debug.LogWarning($"[<color=green>Easy Shader Reassign</color>] No valid Shader found in dummy shaders folder: {shadersPath}\n");
                 }
             }
             else
             {
-                Debug.LogWarning($"Folder with (dummy) shaders not found in {AssetsPath}.\nIf all materials were paired to a shader successfully, you can ignore this warning.");
+                Debug.LogWarning($"[<color=green>Easy Shader Reassign</color>] Folder with dummy shaders not found in: {AssetsPath}\n");
             }
         }
+
         private void OnDestroy()
         {
             folderWithMaterials = null;
             FacsGUIStyles = null;
-            Nulls();
+            NullVars();
         }
-        private void Nulls()
+
+        private void NullVars()
         {
             OldShaders = null;
             OldFoldOuts = null;
