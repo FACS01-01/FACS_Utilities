@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEditor;
 
 namespace FACS01.Utilities
 {
@@ -9,17 +10,19 @@ namespace FACS01.Utilities
         public GUIStyle button;
         public GUIStyle helpboxSmall;
         public GUIStyle buttonSmall;
+        public GUIStyle wrappedLabel;
+        public GUIStyle foldout;
 
         public FACSGUIStyles()
         {
-            helpbox = new GUIStyle("HelpBox")
+            helpbox = new GUIStyle(EditorStyles.helpBox)
             {
                 richText = true,
                 alignment = TextAnchor.MiddleCenter,
                 fontSize = 13,
                 wordWrap = true
             };
-
+            
             dropdownbutton = new GUIStyle("dropdownbutton")
             {
                 richText = true,
@@ -33,7 +36,7 @@ namespace FACS01.Utilities
                 fontSize = 13
             };
 
-            helpboxSmall = new GUIStyle("HelpBox")
+            helpboxSmall = new GUIStyle(EditorStyles.helpBox)
             {
                 richText = true,
                 alignment = TextAnchor.MiddleCenter,
@@ -48,6 +51,19 @@ namespace FACS01.Utilities
                 alignment = TextAnchor.MiddleCenter,
                 fontSize = 12,
                 padding = new RectOffset(4, 4, 1, 2)
+            };
+
+            wrappedLabel = new GUIStyle()
+            {
+                richText = true,
+                fontSize = 13,
+                wordWrap = true
+            };
+
+            foldout = new GUIStyle(EditorStyles.foldout)
+            {
+                richText = true,
+                fontSize = 13
             };
         }
     }
