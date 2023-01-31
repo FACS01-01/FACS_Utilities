@@ -10,9 +10,9 @@ namespace FACS01.Utilities
 {
     public class FixAnimations : EditorWindow
     {
-        public GameObject source;
-        public AnimatorController animContr;
-        public AnimatorOverrideController animContrOR;
+        private GameObject source;
+        private AnimatorController animContr;
+        private AnimatorOverrideController animContrOR;
 
         private static FACSGUIStyles FacsGUIStyles;
 
@@ -35,22 +35,27 @@ namespace FACS01.Utilities
         private List<(AnimationClip, EditorCurveBinding)> allAnimClipsCB;
         private List<Transform> allPathsTransforms;
 
-        [MenuItem("FACS Utils/Repair Avatar/Fix Animations Missing Paths", false, 1006)]
-        public static void ShowWindow2()
+        [MenuItem("FACS Utils/Repair Avatar/Fix Animations Missing Paths", false, 1004)]
+        public static void ShowWindow()
         {
-            GetWindow(typeof(FixAnimations), false, "Fix Animations Paths", true);
+            var window = GetWindow(typeof(FixAnimations), false, "Fix Animations Paths", true);
+            window.maxSize = new Vector2(1000, 700); window.minSize = new Vector2(160, 160);
+            window.autoRepaintOnSceneChange = true;
         }
+
         public void OnGUI()
         {
             if (FacsGUIStyles == null) { FacsGUIStyles = new FACSGUIStyles(); }
             FacsGUIStyles.helpbox.alignment = TextAnchor.MiddleCenter;
-
-            EditorGUILayout.LabelField($"<color=cyan><b>Fix Animations Missing Paths</b></color>\n\nScans Animations inside the selected Animator Controller" +
-                $" or Animator Override, and tries to repair missing paths, comparing them to the selected GameObject's hierarchy.\n\n" +
+            EditorGUILayout.LabelField($"<color=cyan><b>Fix Animations Missing Paths</b></color>\n\n" +
+                $"Scans Animations inside the selected Animator Controller or Animator Override, " +
+                $"and tries to repair missing paths, comparing them to the selected GameObject's hierarchy.\n\n" +
                 $"This will overwrite all modified Animations, but can be reverted with Undo.\n", FacsGUIStyles.helpbox);
 
             EditorGUILayout.BeginHorizontal();
+            EditorGUI.BeginChangeCheck();
             source = (GameObject)EditorGUILayout.ObjectField(source, typeof(GameObject), true, GUILayout.Height(40));
+            if (EditorGUI.EndChangeCheck()) NullVars();
             EditorGUILayout.BeginVertical();
             int height;
             if (animContr == null && animContrOR == null) height = 20; else height = 40;
@@ -59,17 +64,9 @@ namespace FACS01.Utilities
             EditorGUILayout.EndVertical();
             EditorGUILayout.EndHorizontal();
 
-            if (GUILayout.Button("Run Fix!", FacsGUIStyles.button, GUILayout.Height(40)))
+            if ((source != null && (animContr != null || animContrOR != null)) && GUILayout.Button("Run Fix!", FacsGUIStyles.button, GUILayout.Height(40)))
             {
-                if (source != null && (animContr != null || animContrOR != null))
-                {
-                    RunFix();
-                }
-                else
-                {
-                    ShowNotification(new GUIContent("Empty fields?"));
-                    NullVars();
-                }
+                RunFix();
             }
             if (results != null && results != "")
             {
@@ -77,10 +74,9 @@ namespace FACS01.Utilities
                 EditorGUILayout.LabelField(results, FacsGUIStyles.helpbox);
             }
         }
+
         public void RunFix()
         {
-            Debug.Log($"<color=cyan>FIX ANIMATIONS MISSING PATHS BEGINS</color>");
-
             sourceT = source.transform;
             Paths_nPath = new Dictionary<string, int>();
             Hashes_Paths_nPath = new Dictionary<uint, (string, int)>();
@@ -137,13 +133,15 @@ namespace FACS01.Utilities
                 if (window) window.Repaint();
             }
 
-            Debug.Log($"<color=cyan>FIX ANIMATIONS MISSING PATHS FINISHED</color>");
+            Debug.Log($"[<color=green>Fix Animations</color>] Finished fixing animations!\n");
         }
+
         private void Gen_ComponentLists(Transform t)
         {
             allPathsTransforms.Add(t);
             foreach (Transform childT in t) Gen_ComponentLists(childT);
         }
+
         private void Gen_ComponentLists2(Transform t)
         {
             var gPath = AnimationUtility.CalculateTransformPath(t, sourceT);
@@ -231,6 +229,7 @@ namespace FACS01.Utilities
                 nPath++;
             }
         }
+
         private void AnalizePath(AnimationClip ac, EditorCurveBinding cB)
         {
             isBroken = false;
@@ -251,16 +250,17 @@ namespace FACS01.Utilities
                 {
                     // hashed path in GO doesnt exist
                     results_int[1]++;
-                    Debug.LogWarning($"<color=cyan>AnimationFixer</color>: <color=yellow>Selected GameObject doesn't have hashed path:</color> {cBpath}<color=yellow>. AnimationClip:</color> {ac.name}");
+                    Debug.LogWarning($"[<color=green>Fix Animations</color>] <color=yellow>Selected GameObject doesn't have hashed path:</color> {cBpath}<color=yellow>. AnimationClip:</color> {ac.name}\n");
                 }
             }
             else
             {
                 // path in GO doesnt exist
                 results_int[2]++;
-                Debug.LogWarning($"<color=cyan>AnimationFixer</color>: <color=yellow>Selected GameObject doesn't have path:</color> {cBpath}<color=yellow>. AnimationClip:</color> {ac.name}");
+                Debug.LogWarning($"[<color=green>Fix Animations</color>] <color=yellow>Selected GameObject doesn't have path:</color> {cBpath}<color=yellow>. AnimationClip:</color> {ac.name}\n");
             }
         }
+
         private void AnalizeType(AnimationClip ac, EditorCurveBinding cB, string newPath)
         {
             string cBtype = cB.type.ToString();
@@ -296,9 +296,10 @@ namespace FACS01.Utilities
             {
                 // type not found in path
                 results_int[4]++;
-                Debug.LogWarning($"<color=cyan>AnimationFixer</color>: <color=yellow><b>{cBtype}</b> component not found in path:</color> {newPath}<color=yellow>. AnimationClip:</color> {ac.name}");
+                Debug.LogWarning($"[<color=green>Fix Animations</color>] <color=yellow><b>{cBtype}</b> component not found in path:</color> {newPath}<color=yellow>. AnimationClip:</color> {ac.name}\n");
             }
         }
+
         private void AnalizeProp(AnimationClip ac, EditorCurveBinding cB, string newPath, Type newType)
         {
             string cBpropName = cB.propertyName;
@@ -335,7 +336,7 @@ namespace FACS01.Utilities
                     {
                         // property name not present
                         results_int[5]++;
-                        Debug.LogWarning($"<color=cyan>AnimationFixer</color>: {newType} <color=yellow>property name</color> {cBpropName} <color=yellow>not found, at path:</color> {newPath}<color=yellow>. AnimationClip:</color> {ac.name}");
+                        Debug.LogWarning($"[<color=green>Fix Animations</color>] {newType} <color=yellow>property name</color> {cBpropName} <color=yellow>not found, at path:</color> {newPath}<color=yellow>. AnimationClip:</color> {ac.name}\n");
                         return;
                     }
                 }
@@ -343,8 +344,9 @@ namespace FACS01.Utilities
 
             // unknown property name format
             results_int[6]++;
-            Debug.LogWarning($"<color=cyan>AnimationFixer</color>: <color=yellow>Unknown</color> {newType} <color=yellow>property name</color> {cBpropName} <color=yellow>at path:</color> {newPath}<color=yellow>. AnimationClip:</color> {ac.name}");
+            Debug.LogWarning($"[<color=green>Fix Animations</color>] <color=yellow>Unknown</color> {newType} <color=yellow>property name</color> {cBpropName} <color=yellow>at path:</color> {newPath}<color=yellow>. AnimationClip:</color> {ac.name}\n");
         }
+
         private void SetCurveFix(AnimationClip ac, EditorCurveBinding cB, System.Type newtype, string newpath, string newpropertyName)
         {
             Undo.RegisterCompleteObjectUndo(ac, "Animation Fixes");
@@ -371,6 +373,7 @@ namespace FACS01.Utilities
             //animation property was fixed
             results_int[0]++;
         }
+
         private void GenerateResults()
         {
             results = $"Results:\n   • <color=green>Already working properties:</color> {results_int[7]}\n   • <color=green>Fixed properties:</color> {results_int[0]}\n";
@@ -381,13 +384,16 @@ namespace FACS01.Utilities
             if (results_int[6] > 0) results += $"   • <color=yellow>Properties with unknown format:</color> {results_int[6]}\n";
             if (results_int[3] > 0) results += $"   • <color=yellow>May need Dynamic Bones for fixing:</color> {results_int[3]}\n";
         }
+
         void OnDestroy()
         {
             source = null;
             animContr = null;
+            animContrOR = null;
             FacsGUIStyles = null;
             NullVars();
         }
+
         void NullVars()
         {
             Paths_nPath = null;
