@@ -1,104 +1,124 @@
-﻿using UnityEditor;
-using UnityEngine;
+﻿#if UNITY_EDITOR
 using System;
+using System.Linq;
+using UnityEditor;
+using UnityEngine;
 
 namespace FACS01.Utilities
 {
     public class RemoveMissingScripts : EditorWindow 
     {
-        public GameObject source;
         private static FACSGUIStyles FacsGUIStyles;
+        private static GameObject source;
         private static int GameObjectsScanned;
         private static int missingScriptsCount;
         private static string results;
 
-        [MenuItem("FACS Utils/Repair Avatar/Remove Missing Scripts", false, 1004)]
-        public static void ShowWindow2()
+        [MenuItem("FACS Utils/Repair Avatar/Remove Missing Scripts", false, 1002)]
+        public static void ShowWindow()
         {
-            EditorWindow editorWindow = GetWindow(typeof(RemoveMissingScripts), false, "Remove Missing Scripts", true);
-            editorWindow.autoRepaintOnSceneChange = true;
+            var window = GetWindow(typeof(RemoveMissingScripts), false, "Remove Missing Scripts", true);
+            window.maxSize = new Vector2(1000, 700); window.minSize = new Vector2(160, 160);
+            window.autoRepaintOnSceneChange = true;
         }
+
         public void OnGUI()
         {
             if (FacsGUIStyles == null) { FacsGUIStyles = new FACSGUIStyles(); }
             FacsGUIStyles.helpbox.alignment = TextAnchor.MiddleCenter;
+            EditorGUILayout.LabelField($"<color=cyan><b>Remove Missing Scripts</b></color>\n\n" +
+                $"Scans the selected GameObject and deletes any missing scripts inside it's hierarchy.\n" +
+                $"This operation can't be undone.\n", FacsGUIStyles.helpbox);
 
-            EditorGUILayout.LabelField($"<color=cyan><b>Remove Missing Scripts</b></color>\n\nScans the selected GameObject" +
-                $" and tries to delete any missing scripts inside it's hierarchy.\n" +
-                $"After that, if the selected GameObject is a Prefab, it will be unpacked completely.\n\n" +
-                $"The fix can be Undone, but it will give errors on Console.\n", FacsGUIStyles.helpbox);
-
+            EditorGUI.BeginChangeCheck();
             source = (GameObject)EditorGUILayout.ObjectField(source, typeof(GameObject), true, GUILayout.Height(40));
-
-            if (GUILayout.Button("Run Fix!", FacsGUIStyles.button, GUILayout.Height(40)))
+            if (EditorGUI.EndChangeCheck())
             {
-                if (source != null)
+                NullVars();
+                if (source && PrefabUtility.IsPartOfPrefabAsset(source) && PrefabUtility.GetPrefabAssetType(source) == PrefabAssetType.Model)
                 {
-                    FindInSelected(source);
-                }
-                else
-                {
-                    ShowNotification(new GUIContent("Empty selection?"));
-                    NullVars();
+                    Debug.LogWarning($"[<color=green>Copy Materials</color>] Can't edit Model Prefabs: {source.name}\n");
+                    source = null;
                 }
             }
-            if (results != null && results != "")
+            if (!source && !String.IsNullOrEmpty(results)) NullVars();
+
+            if (source && GUILayout.Button("Run Fix!", FacsGUIStyles.button, GUILayout.Height(40))) Run(source);
+            if (!String.IsNullOrEmpty(results))
             {
                 FacsGUIStyles.helpbox.alignment = TextAnchor.MiddleLeft;
                 EditorGUILayout.LabelField(results, FacsGUIStyles.helpbox);
             }
         }
         
-        private static void FindInSelected(GameObject src)
+        private static void Run(GameObject src)
         {
-            GameObjectsScanned = 0;
-            missingScriptsCount = 0;
-            results = "";
-
-            FindInGo(src);
-
-            if (missingScriptsCount > 0)
+            NullVars();
+            if (PrefabUtility.IsPartOfPrefabAsset(src)) FixPrefab(src);
+            else
             {
-                try
+                var srcRoot = PrefabUtility.IsPartOfPrefabInstance(src) ? PrefabUtility.GetNearestPrefabInstanceRoot(src) : src;
+                var gos = srcRoot.GetComponentsInChildren<Transform>(true).Select(t=>t.gameObject).Where(g => PrefabUtility.IsAnyPrefabInstanceRoot(g));
+                var gos_MA = gos.Where(g=> PrefabUtility.GetPrefabAssetType(g) == PrefabAssetType.MissingAsset);
+                var gos_nMA = gos.Where(g => PrefabUtility.GetPrefabAssetType(g) != PrefabAssetType.MissingAsset)
+                    .Select(g => PrefabUtility.GetCorrespondingObjectFromSource(g)).Distinct();
+                foreach (var go in gos_nMA) FixPrefab(go);
+                foreach (var go in gos_MA)
                 {
-                    PrefabUtility.UnpackPrefabInstance(src, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
+                    PrefabUtility.UnpackPrefabInstance(go, PrefabUnpackMode.OutermostRoot, InteractionMode.AutomatedAction);
                 }
-                catch (ArgumentException) { }
+                GameObjectsScanned = 0;
+                FindMSAndRemoveResursive(srcRoot);
+                source = srcRoot;
             }
 
             GenerateResults();
+            Debug.Log($"[<color=green>Remove Missing Scripts</color>] Finished removing missing scripts!\n");
         }
-        private static void FindInGo(GameObject g)
+
+        private static void FixPrefab(GameObject src2)
+        {
+            var src = PrefabUtility.InstantiatePrefab(src2) as GameObject;
+            if (FindMSAndRemoveResursive(src) > 0)
+            {
+                PrefabUtility.ApplyPrefabInstance(src, InteractionMode.AutomatedAction);
+            }
+            DestroyImmediate(src);
+        }
+
+        private static int FindMSAndRemoveResursive(GameObject g)
         {
             GameObjectsScanned++;
-         
-            var tempCount = GameObjectUtility.GetMonoBehavioursWithMissingScriptCount(g);
-			
-			if (tempCount > 0) {
-                Undo.RegisterCompleteObjectUndo(g, "Remove Empty Scripts");
-                missingScriptsCount += GameObjectUtility.RemoveMonoBehavioursWithMissingScript(g);
-			}
-            
+            int MBWMSCount = GameObjectUtility.GetMonoBehavioursWithMissingScriptCount(g);
+			if (MBWMSCount > 0) MBWMSCount = GameObjectUtility.RemoveMonoBehavioursWithMissingScript(g);
+            missingScriptsCount += MBWMSCount;
             foreach (Transform childT in g.transform)
             {
-                FindInGo(childT.gameObject);
+                MBWMSCount += FindMSAndRemoveResursive(childT.gameObject);
             }
+            return MBWMSCount;
         }
+
         private static void GenerateResults()
         {
             results = $"Results:\n";
             results += $"   • <color=green>Child GameObjects scanned:</color> {GameObjectsScanned}\n";
             results += $"   • <color=green>Missing scripts deleted:</color> {missingScriptsCount}\n";
         }
-        private void OnDestroy()
+
+        public void OnDestroy()
         {
             source = null;
             FacsGUIStyles = null;
             NullVars();
         }
-        void NullVars()
+
+        private static void NullVars()
         {
+            GameObjectsScanned = 0;
+            missingScriptsCount = 0;
             results = null;
         }
     }
 }
+#endif
