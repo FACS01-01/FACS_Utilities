@@ -30,7 +30,7 @@ namespace FACS01.Utilities
             EditorGUILayout.LabelField($"<color=cyan><b>Copy Mesh Settings</b></color>\n\n" +
                 $"Scans the selected GameObject to copy from, lists all available Mesh Renderer and Skinned Mesh Renderer components, " +
                 $"and lets you choose which ones to copy materials and settings into the next GameObject.\n" +
-                $"This doesn't replace the meshes currently in place.", FacsGUIStyles.helpbox);
+                $"This doesn't replace the meshes currently in place.\n", FacsGUIStyles.helpbox);
 
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.BeginVertical();
