@@ -11,6 +11,7 @@ namespace FACS01.Utilities
     public class FixScripts : EditorWindow
     {
         private readonly string YAML_header = "%YAML 1.1";
+        private readonly string MonoBehaviour_header = "MonoBehaviour:";
         private readonly string AnimationClip_header = "AnimationClip:";
         private readonly string separator = "--- !u!";
         private readonly string scriptguidflag = "  m_Script:";
