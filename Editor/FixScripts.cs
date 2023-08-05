@@ -1,4 +1,4 @@
-﻿#if UNITY_EDITOR
+﻿#if true
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -11,9 +11,11 @@ namespace FACS01.Utilities
     public class FixScripts : EditorWindow
     {
         private readonly string YAML_header = "%YAML 1.1";
-        private readonly string MonoBehaviour_header = "MonoBehaviour:";
+        private readonly string AnimationClip_header = "AnimationClip:";
         private readonly string separator = "--- !u!";
         private readonly string scriptguidflag = "  m_Script:";
+        private readonly string AnimClipguidflag = "    script:";
+        private readonly string AnimClipguidflag1 = "      script:";
 
         private string MonoScriptFolder;
         private string[] ScriptsFullNames;
@@ -160,7 +162,8 @@ namespace FACS01.Utilities
             string[] filePaths = Directory.GetFiles(AssetDatabase.GetAssetPath(selectedFolder), "*.asset", SearchOption.AllDirectories);
             string[] filePaths1 = Directory.GetFiles(AssetDatabase.GetAssetPath(selectedFolder), "*.controller", SearchOption.AllDirectories);
             string[] filePaths2 = Directory.GetFiles(AssetDatabase.GetAssetPath(selectedFolder), "*.prefab", SearchOption.AllDirectories);
-            filePaths = filePaths.Concat(filePaths1).Concat(filePaths2).Select(path => path.Replace(@"\", "/"))
+            string[] filePaths3 = Directory.GetFiles(AssetDatabase.GetAssetPath(selectedFolder), "*.anim", SearchOption.AllDirectories);
+            filePaths = filePaths.Concat(filePaths1).Concat(filePaths2).Concat(filePaths3).Select(path => path.Replace(@"\", "/"))
                 .Where(path => File.ReadLines(path).First().Contains(YAML_header)).ToArray();
 
             bool refresh = false;
@@ -184,6 +187,7 @@ namespace FACS01.Utilities
             {
                 long lineN = 0;
                 bool inMonoBehaviour = false;
+                bool inAnimationClip = false;
                 while (!reader.EndOfStream)
                 {
                     string line = reader.ReadLine();
@@ -204,7 +208,39 @@ namespace FACS01.Utilities
                             else if (NewGUID_Stats.ContainsKey(guidfileid)) NewGUID_Stats[guidfileid][1]++;
                         }
                     }
+                    else if (inAnimationClip)
+                    {
+                        
+                        if (line.StartsWith(separator)) inAnimationClip = false;
+                        else if (line.StartsWith(AnimClipguidflag) && line.Contains("fileID:") && line.Contains("guid:"))
+                        {
+                            Debug.Log(line);
+                            var guid_fileid = Extract_GUID_FileID(line);
+                            var guidfileid = guid_fileid.Item1 + "," + guid_fileid.Item2;
+                            if (OldGUID_Stats.ContainsKey(guid_fileid.Item1))
+                            {
+                                Debug.Log("Yes");
+                                var scriptname = OldScriptsGUIDs.FirstOrDefault(x => x.Value == guid_fileid.Item1).Key;
+                                linestoreplace.Add(lineN, $"    script: {{fileID: {NewScriptsGUIDs[scriptname].Item2}, guid: {NewScriptsGUIDs[scriptname].Item1}, type: 3}}");
+                                OldGUID_Stats[guid_fileid.Item1][0]++;
+                            }
+                            else if (NewGUID_Stats.ContainsKey(guidfileid)) NewGUID_Stats[guidfileid][1]++;
+                        }
+                        else if (line.StartsWith(AnimClipguidflag1) && line.Contains("fileID:") && line.Contains("guid:"))
+                        {
+                            var guid_fileid = Extract_GUID_FileID(line);
+                            var guidfileid = guid_fileid.Item1 + "," + guid_fileid.Item2;
+                            if (OldGUID_Stats.ContainsKey(guid_fileid.Item1))
+                            {
+                                var scriptname = OldScriptsGUIDs.FirstOrDefault(x => x.Value == guid_fileid.Item1).Key;
+                                linestoreplace.Add(lineN, $"      script: {{fileID: {NewScriptsGUIDs[scriptname].Item2}, guid: {NewScriptsGUIDs[scriptname].Item1}, type: 3}}");
+                                OldGUID_Stats[guid_fileid.Item1][0]++;
+                            }
+                            else if (NewGUID_Stats.ContainsKey(guidfileid)) NewGUID_Stats[guidfileid][1]++;
+                        }
+                    }
                     else if (line.StartsWith(MonoBehaviour_header)) inMonoBehaviour = true;
+                    else if (line.StartsWith(AnimationClip_header)) inAnimationClip = true;
 
                     lineN++;
                 }
