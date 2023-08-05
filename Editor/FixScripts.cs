@@ -215,12 +215,10 @@ namespace FACS01.Utilities
                         if (line.StartsWith(separator)) inAnimationClip = false;
                         else if (line.StartsWith(AnimClipguidflag) && line.Contains("fileID:") && line.Contains("guid:"))
                         {
-                            Debug.Log(line);
                             var guid_fileid = Extract_GUID_FileID(line);
                             var guidfileid = guid_fileid.Item1 + "," + guid_fileid.Item2;
                             if (OldGUID_Stats.ContainsKey(guid_fileid.Item1))
                             {
-                                Debug.Log("Yes");
                                 var scriptname = OldScriptsGUIDs.FirstOrDefault(x => x.Value == guid_fileid.Item1).Key;
                                 linestoreplace.Add(lineN, $"    script: {{fileID: {NewScriptsGUIDs[scriptname].Item2}, guid: {NewScriptsGUIDs[scriptname].Item1}, type: 3}}");
                                 OldGUID_Stats[guid_fileid.Item1][0]++;
