@@ -15,7 +15,7 @@ Features:
 	
 	- Easy Shader Reassign
 	
-	- Fix Scripts
+	- Fix Scripts (now also in animations)
 	
 	- Remove Missing Scripts
 	
