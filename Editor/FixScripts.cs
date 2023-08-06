@@ -84,7 +84,7 @@ namespace FACS01.Utilities
             }
             else
             {
-                Debug.LogWarning($"[<color=green>Fix Scripts</color>] There is no \".MonoScript\" folder inside the selected folder, or it doesn't contain any .meta file.\n");
+                Debug.LogWarning($"[<color=green>Fix Scripts</color>] There is no \".Script\" folder inside the selected folder, or it doesn't contain any .meta file.\n");
             }
         }
 
