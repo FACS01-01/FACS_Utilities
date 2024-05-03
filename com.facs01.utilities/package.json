@@ -1,0 +1,21 @@
+{
+  "name": "com.facs01.facs_utilities",
+  "version": "24.5.3",
+  "description": "Tools to help you edit and repair Unity/VRChat projects",
+  "displayName": "FACS Utilities",
+  "unity": "2022.3",
+  "author": {
+    "name": "FACS01",
+    "url": "https://github.com/FACS01-01"
+  },
+  "changelogUrl": "https://github.com/FACS01-01/FACS_Utilities/releases",
+  "documentationUrl": "https://github.com/FACS01-01/FACS_Utilities/wiki",
+  "license": "OSL-3.0",
+  "licensesUrl": "https://license.md/licenses/open-software-license-3-0/",
+  "type": "Tool",
+  "vpmDependencies": {},
+  "legacyFolders": {
+    "Assets\\FACS01 Utilities": ""
+  },
+  "url": ""
+}
