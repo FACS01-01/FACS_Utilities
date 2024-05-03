@@ -5,32 +5,7 @@
 
 Tools to help you edit and repair Unity/VRChat projects
 
-Features:
+For a list of available tools, check out the [Wiki](https://github.com/FACS01-01/FACS_Utilities/wiki)!
 
-	- FACS Load Bundle
-	
-	- Fav Folder Importer
-	
-	- Shader Usage
-	
-	- Easy Shader Reassign
-	
-	- Fix Scripts
-	
-	- Remove Missing Scripts
-	
-	- Better Avatar Bounds
-	
-	- Copy Components
-	
-	- Copy Mesh Settings
-	
-	- Fix Animations Missing Paths
-	
-	- VRC Control Panel Fix*
-	
-	- VRC Custom Preview Images* (thanks to/using SixLabors.ImageSharp)
-
-*Tools temporarily removed until future fix.
-
-[SixLabors ImageSharp GitHub](https://github.com/SixLabors/ImageSharp)
+## Donations
+If you like my tools and want to support me, I have a [Buy Me a Coffee](https://www.buymeacoffee.com/FACS01) page!
