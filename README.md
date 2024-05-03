@@ -4,9 +4,9 @@
 [![](https://img.shields.io/github/v/release/FACS01-01/FACS_Utilities)](https://github.com/FACS01-01/FACS_Utilities/releases/latest)
 [![](https://img.shields.io/github/downloads/FACS01-01/FACS_Utilities/latest/total.svg)](https://github.com/FACS01-01/FACS_Utilities/releases/latest)
 
-Tools to help you edit and repair Unity/VRChat projects
+Tools to help you edit and repair Unity/VRChat projects. This package doesn't require any VRChat SDK to be installed in the project to work.
 
-For a list of available tools, check out the [Wiki](https://github.com/FACS01-01/FACS_Utilities/wiki)!
+For a list of available tools, and a couple of guides, check out the [Wiki](https://github.com/FACS01-01/FACS_Utilities/wiki)!
 
 ## Installation
 
