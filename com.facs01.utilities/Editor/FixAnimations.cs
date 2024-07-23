@@ -407,7 +407,7 @@ namespace FACS01.Utilities
                         foreach (var path in paths)
                         {
                             GetAnimatableBindings(path);
-                            var types = GO_Types_Shaders[path];
+                            if(!GO_Types_Shaders.TryGetValue(path, out var types)) continue;
                             foreach (var t in types.Keys.OrderBy(t => ComponentDependencies.InheritanceDepth(t, typeof(Component))))
                             {
                                 if (!analyzingTYPE.IsAssignableFrom(t)) continue;
