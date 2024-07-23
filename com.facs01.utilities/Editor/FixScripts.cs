@@ -324,10 +324,7 @@ namespace FACS01.Utilities
             }
             foreach (var scriptFolder in scriptFolders) DeleteEmptyDirs(scriptFolder);
             foreach (var scriptFolder in scriptFolders)
-            {
-                var relativeFolderPath = scriptFolder[(Directory.GetCurrentDirectory().Length + 1)..];
-                if (!Directory.Exists(scriptFolder)) Logger.Log($"{RichToolName} The folder \"{relativeFolderPath}\" wasn't needed anymore and was deleted.");
-            }
+                if (!Directory.Exists(scriptFolder)) Logger.Log($"{RichToolName} The folder \"{scriptFolder}\" wasn't needed anymore and was deleted.");
         }
 
         private static void DeleteEmptyDirs(string mainDir)
