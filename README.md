@@ -17,3 +17,7 @@ There is also support for [VRChat Creator Companion's VPM](https://facs01-01.git
 ## Donations
 
 If you like my tools and want to support me, I have a [Buy Me a Coffee](https://www.buymeacoffee.com/FACS01) page!
+
+## Discord Server
+
+If you want help using my tools, or want to report bugs, or to get access to beta releases, come to [my brand new server](https://discord.gg/wswJUwa9SY)!
