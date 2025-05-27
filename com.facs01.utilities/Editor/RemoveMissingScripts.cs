@@ -179,7 +179,7 @@ namespace FACS01.Utilities
 
         private void Run(GameObject src)
         {
-            NullVars(); MBTemp = new();
+            NullVars();
             if (PrefabUtility.IsPartOfPrefabAsset(src) && !string.IsNullOrEmpty(AssetDatabase.GetAssetPath(src))) FixPrefab(src);
             else
             {
@@ -193,11 +193,9 @@ namespace FACS01.Utilities
                 {
                     PrefabUtility.UnpackPrefabInstance(go, PrefabUnpackMode.OutermostRoot, InteractionMode.AutomatedAction);
                 }
-                GameObjectsScanned = 0;
-                FindMSAndRemoveResursive(srcRoot);
+                removedMissingScripts += RemoveMissingScriptsRecursive(srcRoot, out GameObjectsScanned);
                 source = srcRoot;
             }
-            MBTemp.Clear(); MBTemp = null;
             if (removedMissingScripts == 0)
             {
                 ShowNotification(new GUIContent("No Missing Script Removed!"));
@@ -210,24 +208,27 @@ namespace FACS01.Utilities
         private static void FixPrefab(GameObject src2)
         {
             var src = PrefabUtility.InstantiatePrefab(src2) as GameObject;
-            if (FindMSAndRemoveResursive(src)) PrefabUtility.ApplyPrefabInstance(src, InteractionMode.AutomatedAction);
+            var rmvCount = RemoveMissingScriptsRecursive(src, out var goScanned);
+            removedMissingScripts += rmvCount; GameObjectsScanned += goScanned;
+            if (rmvCount>0) PrefabUtility.ApplyPrefabInstance(src, InteractionMode.AutomatedAction);
             DestroyImmediate(src);
         }
 
-        private static bool FindMSAndRemoveResursive(GameObject g)
+        public static int RemoveMissingScriptsRecursive(GameObject go, out int goScanned)
         {
-            GameObjectsScanned++; var anyRemoved = false;
-            MBTemp.Clear(); g.GetComponents<MonoBehaviour>(MBTemp);
-            if (MBTemp.Any(mb => !mb))
+            return RemoveMissingScriptsRecursive(go.transform, out goScanned);
+        }
+
+        public static int RemoveMissingScriptsRecursive(Transform t, out int goScanned)
+        {
+            goScanned = 1;
+            int rmvCount = GameObjectUtility.RemoveMonoBehavioursWithMissingScript(t.gameObject);
+            foreach (Transform child in t)
             {
-                var removed = GameObjectUtility.RemoveMonoBehavioursWithMissingScript(g);
-                if (removed > 0) { removedMissingScripts += removed; anyRemoved = true; }
+                rmvCount += RemoveMissingScriptsRecursive(child, out var _goScanned);
+                goScanned += _goScanned;
             }
-            foreach (Transform childT in g.transform)
-            {
-                if (FindMSAndRemoveResursive(childT.gameObject) && !anyRemoved) anyRemoved = true;
-            }
-            return anyRemoved;
+            return rmvCount;
         }
 
         private static void GenerateResults()

@@ -6,7 +6,8 @@ namespace FACS01.Utilities
 {
     public static class GUITools
     {
-        private static readonly Color toggledColor = new(32 * 70f / (11 * 256), 32 * 96f / (11 * 256), 32 * 124f / (11 * 256), 1f);
+        public static readonly GUIStyle FoldoutStyle = new("Foldout");
+        private static readonly Color toggledColor = new(70f / 88, 96f / 88, 124f / 88, 1f);
 
         private static GUIContent _EditIcon;
         public static GUIContent EditIcon
@@ -72,9 +73,21 @@ namespace FACS01.Utilities
             return false;
         }
 
-        public static void ColoredToggle(ref bool toggle, string text, params GUILayoutOption[] options)
+        public static bool ColoredToggle(ref bool toggle, string text, params GUILayoutOption[] options)
         {
-            if (TintedButton(toggle ? Color.blue : Color.red, text, options)) toggle = !toggle;
+            if (TintedButton(toggle ? Color.blue : Color.red, text, options)) { toggle = !toggle; return true; }
+            return false;
+        }
+        
+        public static Color GetTintedBGColor(float tintAmount)
+        {
+            Color baseColor = EditorGUIUtility.isProSkin ? new Color(0.22f, 0.22f, 0.22f) : new Color(0.76f, 0.76f, 0.76f);
+            return new Color(
+                Mathf.Clamp01(baseColor.r + tintAmount),
+                Mathf.Clamp01(baseColor.g + tintAmount),
+                Mathf.Clamp01(baseColor.b + tintAmount),
+                1f
+            );
         }
 
         public class GUIBGColorScope : GUI.Scope

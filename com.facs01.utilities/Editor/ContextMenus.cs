@@ -115,7 +115,7 @@ namespace FACS01.Utilities
             if (string.IsNullOrEmpty(savepath)) return;
             savepath = System.IO.Path.GetFullPath(savepath);
             if (System.IO.File.Exists(savepath)) { Logger.LogWarning(RichToolName + " Overwriting an existing asset is not supported."); return; }
-            var projPath = System.IO.Path.GetFullPath(System.IO.Directory.GetCurrentDirectory()) + System.IO.Path.DirectorySeparatorChar; ;
+            var projPath = System.IO.Path.GetFullPath(System.IO.Directory.GetCurrentDirectory()) + System.IO.Path.DirectorySeparatorChar;
             if (!savepath.StartsWith(projPath))
             { Logger.LogWarning(RichToolName + " Select a save location for the " + Logger.RichBlendTree + " inside this project!"); return; }
             savepath = savepath.Replace(projPath, "");

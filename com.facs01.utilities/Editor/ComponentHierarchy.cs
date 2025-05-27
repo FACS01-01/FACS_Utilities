@@ -11,16 +11,16 @@ namespace FACS01.Utilities
     {
         private static readonly Type TypeofTransform = typeof(Transform);
         private static readonly Type TypeofRectTransform = typeof(RectTransform);
-        private static readonly GUIStyle foldoutStyle = new("Foldout");
+        
         private static readonly GUIContent GO_enabled_content = new("GameObject Enable State", EditorGUIUtility.IconContent("animationvisibilitytoggleon").image);
         private static readonly GUIContent GO_enabled_content_icon = new(GO_enabled_content.image);
-        private static readonly float GO_enabled_content_width = 184.2f; // GUI.skin.toggle.CalcSize(new GUIContent("GameObject Enable State")).x + 20;
         private Vector2 scrollView = default;
         private readonly Transform originT;
         private readonly FoldableHierarchy origin;
         private FoldableHierarchy[] go_enables = null;
         private bool go_enables_display = false;
         private bool go_enables_unfolded = false;
+        private static bool alternateDisplayColor = false;
 
         public static Dictionary<Type, TypeData> Types = new();
         public bool hierarchyDisplay = false;
@@ -98,10 +98,62 @@ namespace FACS01.Utilities
             return toggles_by_type[typeHash].GetAllToggles<T>(filter);
         }
 
-        public HashSet<Component> GetAllToggles(Type type, int filter = 0)  // -1:falses , 1:trues
+        public Component[] GetAllToggles(int filter = 0)
+        {
+            var alltoggles = new List<Component>();
+
+            GetAllToggles(alltoggles, filter);
+
+            return alltoggles.ToArray();
+        }
+
+        private void GetAllToggles(List<Component> alltoggles, int filterByState)
+        {
+            if (toggles_by_type != null)
+            {
+                if (filterByState == 1)
+                {
+                    foreach (var ft in toggles_by_type.Values)
+                    {
+                        foreach (var ct in ft.toggleList)
+                        {
+                            if (ct.state) alltoggles.Add(ct.component);
+                        }
+                    }
+                }
+                else if (filterByState == 0)
+                {
+                    foreach (var ft in toggles_by_type.Values)
+                    {
+                        foreach (var ct in ft.toggleList)
+                        {
+                            if (!ct.state) alltoggles.Add(ct.component);
+                        }
+                    }
+                }
+                else
+                {
+                    foreach (var ft in toggles_by_type.Values)
+                    {
+                        foreach (var ct in ft.toggleList)
+                        {
+                            alltoggles.Add(ct.component);
+                        }
+                    }
+                }
+            }
+        }
+
+        public HashSet<Component> GetAllToggles(Type type, int filter = 0)  // -1:falses , 1:trues, 0:all
         {
             if (!toggles_by_type.ContainsKey(type)) return null;
             return toggles_by_type[type].GetAllToggles<Component>(filter);
+        }
+
+        public Dictionary<Component, ComponentToggle> GetAllTogglesDict(Type type, int filter = 0)  // -1:falses , 1:trues, 0:all
+        {
+            if (!toggles_by_type.ContainsKey(type)) return null;
+            return toggles_by_type[type].GetAllTogglesDict<Component>(filter);
         }
 
         public void SetAllToggles(Type type, bool on_off)
@@ -118,10 +170,12 @@ namespace FACS01.Utilities
         public bool DisplayGUI()
         {
             scrollView = EditorGUILayout.BeginScrollView(scrollView, GUILayout.ExpandHeight(true));
-            bool anyOn = false;
+            bool anyOn = false; alternateDisplayColor = false;
             if (hierarchyDisplay)
             {
                 origin.DisplayFoldable(go_enables_display && !go_enables_hidden);
+                GUILayout.Space(1);
+                alternateDisplayColor = true;
                 DisplayHierarchyRecursive(origin, origin.unfolded, go_enables_display && !go_enables_hidden, ref anyOn);
             }
             else DisplayAllByTypes(ref anyOn);
@@ -206,29 +260,34 @@ namespace FACS01.Utilities
         {
             if (go_enables_display)
             {
+                Rect rect = EditorGUILayout.BeginVertical(GUILayout.ExpandWidth(true));
+                EditorGUI.DrawRect(rect, GUITools.GetTintedBGColor(alternateDisplayColor ? 0.05f : 0));
                 if (hideTypeFoldout)
                 {
                     foreach (var fh in go_enables)
                     {
                         EditorGUILayout.BeginHorizontal();
                         EditorGUILayout.LabelField(GO_enabled_content_icon, GUILayout.Width(16));
-                        fh.GO_enable = EditorGUILayout.ToggleLeft(fh.content.text, fh.GO_enable, GUILayout.Height(16), GUILayout.Width(fh.content_width));
+                        fh.GO_enable = EditorGUILayout.ToggleLeft(fh.content.text, fh.GO_enable, GUILayout.Height(16));
                         EditorGUILayout.EndHorizontal();
                         if (!anyon && fh.GO_enable) anyon = true;
                     }
                 }
                 else
                 {
-                    EditorGUILayout.BeginHorizontal();
-                    go_enables_unfolded = GUILayout.Toggle(go_enables_unfolded, GO_enabled_content, foldoutStyle, GUILayout.Height(16), GUILayout.Width(GO_enabled_content_width));
-                    GUILayout.FlexibleSpace();
-                    if (GUILayout.Button("All", GUILayout.Height(16))) SetAllGOEnables(true);
-                    if (GUILayout.Button("None", GUILayout.Height(16))) SetAllGOEnables(false);
-                    if (GUILayout.Button($"{(go_enables_hidden ? "Show" : "Hide")}", GUILayout.Height(16)))
+                    GUILayout.Space(0);
+                    EditorGUILayout.BeginHorizontal(GUILayout.Height(16), GUILayout.ExpandWidth(true));
+                    GUILayout.Space(3);
+                    var r = EditorGUILayout.GetControlRect(false, 16, GUILayout.ExpandWidth(true));
+                    go_enables_unfolded = GUI.Toggle(r, go_enables_unfolded, GO_enabled_content, GUITools.FoldoutStyle);
+                    if (GUILayout.Button("All", GUILayout.Height(16), GUILayout.Width(28))) SetAllGOEnables(true);
+                    if (GUILayout.Button("None", GUILayout.Height(16), GUILayout.Width(44))) SetAllGOEnables(false);
+                    if (GUILayout.Button($"{(go_enables_hidden ? "Show" : "Hide")}", GUILayout.Height(16), GUILayout.Width(44)))
                     {
                         go_enables_hidden = !go_enables_hidden;
                         if (go_enables != null) CalculateHidden(go_enables);
                     }
+                    GUILayout.Space(3);
                     EditorGUILayout.EndHorizontal();
 
                     if (go_enables_unfolded)
@@ -239,7 +298,7 @@ namespace FACS01.Utilities
                         EditorGUILayout.BeginVertical();
                         foreach (var fh in go_enables)
                         {
-                            fh.GO_enable = EditorGUILayout.ToggleLeft(fh.content.text, fh.GO_enable, GUILayout.Height(16), GUILayout.Width(fh.content_width));
+                            fh.GO_enable = EditorGUILayout.ToggleLeft(fh.content.text, fh.GO_enable, GUILayout.Height(16));
                             if (!anyon && fh.GO_enable) anyon = true;
                         }
                         EditorGUILayout.EndVertical();
@@ -247,18 +306,23 @@ namespace FACS01.Utilities
                         EditorGUI.EndDisabledGroup();
                     }
                     else if (!anyon) foreach (var fh in go_enables) if (fh.GO_enable) { anyon = true; break; }
+                    EditorGUILayout.Space(1, true);
                 }
+                EditorGUILayout.EndVertical(); alternateDisplayColor = !alternateDisplayColor;
             }
 
             foreach (var ft in toggles_by_type.Values)
             {
+                Rect rect = EditorGUILayout.BeginVertical(GUILayout.ExpandWidth(true));
+                EditorGUI.DrawRect(rect, GUITools.GetTintedBGColor(alternateDisplayColor ? 0.05f : 0));
+                EditorGUILayout.Space(1, true);
                 if (hideTypeFoldout)
                 {
                     foreach (var toggle in ft.toggleList)
                     {
                         EditorGUILayout.BeginHorizontal();
                         EditorGUILayout.LabelField(new GUIContent(toggle.content.image), GUILayout.Width(16));
-                        toggle.state = EditorGUILayout.ToggleLeft(toggle.GOName, toggle.state, GUILayout.Height(16), GUILayout.Width(toggle.GOName_width));
+                        toggle.state = EditorGUILayout.ToggleLeft(toggle.GOName, toggle.state, GUILayout.Height(16));
                         EditorGUILayout.EndHorizontal();
                         if (!anyon && toggle.state) anyon = true;
                     }
@@ -266,11 +330,11 @@ namespace FACS01.Utilities
                 else
                 {
                     EditorGUILayout.BeginHorizontal();
-                    ft.unfolded = GUILayout.Toggle(ft.unfolded, ft.content, foldoutStyle, GUILayout.Height(16), GUILayout.Width(ft.content_width));
-                    GUILayout.FlexibleSpace();
-                    if (GUILayout.Button("All", GUILayout.Height(16))) ft.SetAllToggles(true);
-                    if (GUILayout.Button("None", GUILayout.Height(16))) ft.SetAllToggles(false);
-                    if (GUILayout.Button($"{(ft.hidden ? "Show" : "Hide")}", GUILayout.Height(16)))
+                    var r = EditorGUILayout.GetControlRect(false, 16, GUILayout.ExpandWidth(true));
+                    ft.unfolded = GUI.Toggle(r, ft.unfolded, ft.content, GUITools.FoldoutStyle);
+                    if (GUILayout.Button("All", GUILayout.Height(16), GUILayout.Width(28))) ft.SetAllToggles(true);
+                    if (GUILayout.Button("None", GUILayout.Height(16), GUILayout.Width(44))) ft.SetAllToggles(false);
+                    if (GUILayout.Button($"{(ft.hidden ? "Show" : "Hide")}", GUILayout.Height(16), GUILayout.Width(44)))
                     {
                         var L = new HashSet<FoldableHierarchy>();
                         SetTypeHidden(ft, !ft.hidden, L);
@@ -286,7 +350,7 @@ namespace FACS01.Utilities
                         EditorGUILayout.BeginVertical();
                         foreach (var toggle in ft.toggleList)
                         {
-                            toggle.state = EditorGUILayout.ToggleLeft(toggle.GOName, toggle.state, GUILayout.Height(16), GUILayout.Width(toggle.GOName_width));
+                            toggle.state = EditorGUILayout.ToggleLeft(toggle.GOName, toggle.state, GUILayout.Height(16));
                             if (!anyon && toggle.state) anyon = true;
                         }
                         EditorGUILayout.EndVertical();
@@ -294,7 +358,9 @@ namespace FACS01.Utilities
                         EditorGUI.EndDisabledGroup();
                     }
                     else if (!anyon) foreach (var toggle in ft.toggleList) if (toggle.state) { anyon = true; break; }
+                    EditorGUILayout.Space(1, true);
                 }
+                EditorGUILayout.EndVertical(); alternateDisplayColor = !alternateDisplayColor;
             }
         }
 
@@ -302,36 +368,63 @@ namespace FACS01.Utilities
         {
             if (isUnfolded)
             {
+                var lastDisplayColor = alternateDisplayColor;
                 if (fh.children != null)
                 {
                     foreach (var ch in fh.children.Values)
                     {
-                        if (!ch.hidden) ch.DisplayFoldable(go_enables_disp);
+                        if (!ch.hidden)
+                        {
+                            Rect rect = EditorGUILayout.BeginVertical(GUILayout.ExpandWidth(true));
+                            GUILayout.Space(1);
+                            rect.height += 2; rect.y -= 1;
+                            EditorGUI.DrawRect(rect, GUITools.GetTintedBGColor(alternateDisplayColor ? 0.05f : 0));
+                            alternateDisplayColor = !alternateDisplayColor;
+                            ch.DisplayFoldable(go_enables_disp);
+                            GUILayout.Space(1);
+                        }
                         DisplayHierarchyRecursive(ch, isUnfolded && ch.unfolded && !ch.hidden, go_enables_disp, ref anyOn);
+                        if (!ch.hidden)
+                        {
+                            EditorGUILayout.EndVertical();
+                        }
                     }
                 }
                 if (go_enables_disp || fh.selfToggles != null)
                 {
-                    EditorGUILayout.BeginHorizontal();
-                    GUILayout.Space(fh.foldoutDepth * 13 + 2);
-                    EditorGUILayout.BeginVertical();
+                    var displayedAnyToggle = go_enables_disp || (fh.selfToggles != null && fh.selfToggles.Any(tog => !tog.hidden));
+                    if (displayedAnyToggle)
+                    {
+                        EditorGUILayout.BeginHorizontal(GUILayout.Height(16), GUILayout.ExpandWidth(true));
+                        GUILayout.Space(fh.foldoutDepth * 13 + 18);
+                        EditorGUILayout.BeginVertical(GUILayout.ExpandWidth(true));
+                        GUILayout.Space(1);
+                    }
 
                     if (go_enables_disp)
                     {
-                        fh.GO_enable = GUILayout.Toggle(fh.GO_enable, GO_enabled_content, GUILayout.Height(16), GUILayout.Width(GO_enabled_content_width));
+                        fh.GO_enable = GUILayout.Toggle(fh.GO_enable, GO_enabled_content, GUILayout.Height(16), GUILayout.MinWidth(50));
                         if (!anyOn && fh.GO_enable) anyOn = true;
                     }
                     if (fh.selfToggles != null)
                     {
                         foreach (var toggle in fh.selfToggles)
                         {
-                            if (!toggle.hidden) toggle.state = GUILayout.Toggle(toggle.state, toggle.content, GUILayout.Height(16), GUILayout.Width(toggle.content_width));
+                            if (!toggle.hidden)
+                            {
+                                toggle.state = GUILayout.Toggle(toggle.state, toggle.content, GUILayout.Height(16), GUILayout.MinWidth(50));
+                            }
                             if (!anyOn && toggle.state) anyOn = true;
                         }
                     }
 
-                    EditorGUILayout.EndVertical();
-                    EditorGUILayout.EndHorizontal();
+                    if (displayedAnyToggle)
+                    {
+                        GUILayout.Space(1);
+                        EditorGUILayout.EndVertical();
+                        EditorGUILayout.EndHorizontal();
+                        alternateDisplayColor = lastDisplayColor;
+                    }
                 }
             }
             else if (!anyOn)
@@ -446,7 +539,7 @@ namespace FACS01.Utilities
 
             public Transform t;
             public GUIContent content;
-            public float content_width;
+            public float contentWidth;
 
             public bool GO_enable = false;
 
@@ -454,14 +547,11 @@ namespace FACS01.Utilities
             {
                 t = _t;
                 content = new(_t.name, PrefabUtility.GetIconForGameObject(_t.gameObject));
-                content_width = GUI.skin.toggle.CalcSize(new GUIContent(content.text)).x + 20;
+                contentWidth = GUITools.FoldoutStyle.CalcSize(content).x - 240;
             }
 
-            public FoldableHierarchy(Transform _t, FoldableHierarchy _parent)
+            public FoldableHierarchy(Transform _t, FoldableHierarchy _parent) : this(_t)
             {
-                t = _t;
-                content = new(_t.name, PrefabUtility.GetIconForGameObject(_t.gameObject));
-                content_width = GUI.skin.toggle.CalcSize(new GUIContent(content.text)).x + 20;
                 parent = _parent;
                 foldoutDepth = _parent.foldoutDepth + 1;
             }
@@ -501,20 +591,24 @@ namespace FACS01.Utilities
                 }
             }
 
-            public void SetAllTogglesRecursive(bool off_on, bool includeGoEnable)
+            public int SetAllTogglesRecursive(bool off_on, bool includeGoEnable, bool toggleHidden = false)
             {
-                SetAllToggles(off_on, includeGoEnable);
+                int toggledCount = SetAllToggles(off_on, includeGoEnable, toggleHidden);
                 if (children != null)
                 {
-                    if (includeGoEnable) foreach (var child in children.Values) child.SetAllTogglesRecursive(off_on, includeGoEnable);
-                    else foreach (var child in children.Values) if (!child.hidden) child.SetAllTogglesRecursive(off_on, includeGoEnable);
+                    if (toggleHidden) foreach (var child in children.Values) toggledCount += child.SetAllTogglesRecursive(off_on, includeGoEnable, toggleHidden);
+                    else foreach (var child in children.Values) if (!child.hidden) toggledCount += child.SetAllTogglesRecursive(off_on, includeGoEnable, toggleHidden);
                 }
+                return toggledCount;
             }
 
-            private void SetAllToggles(bool off_on, bool includeGoEnable)
+            private int SetAllToggles(bool off_on, bool includeGoEnable, bool toggleHidden)
             {
-                if (includeGoEnable) GO_enable = off_on;
-                if (selfToggles != null) foreach (var toggle in selfToggles) if (!toggle.hidden) toggle.state = off_on;
+                int toggledCount = 0;
+                if ((toggleHidden || includeGoEnable) && GO_enable != off_on) { GO_enable = off_on; toggledCount++; }
+                if (selfToggles != null) foreach (var toggle in selfToggles)
+                        if ((toggleHidden || !toggle.hidden) && toggle.state != off_on) { toggle.state = off_on; toggledCount++; }
+                return toggledCount;
             }
 
             public void SetAllFoldouts(bool off_on)
@@ -552,11 +646,23 @@ namespace FACS01.Utilities
             {
                 if (selfToggles != null)
                 {
-                    foreach (var toggle in selfToggles)
+                    if (filterByState == 1)
                     {
-                        if (filterByState == -1 ||
-                            (filterByState == 1 && toggle.state) ||
-                            !toggle.state) alltoggles.Add(toggle.component);
+                        foreach (var toggle in selfToggles)
+                        {
+                            if (toggle.state) alltoggles.Add(toggle.component);
+                        }
+                    }
+                    else if (filterByState == 0)
+                    {
+                        foreach (var toggle in selfToggles)
+                        {
+                            if (!toggle.state) alltoggles.Add(toggle.component);
+                        }
+                    }
+                    else
+                    {
+                        foreach (var toggle in selfToggles) alltoggles.Add(toggle.component);
                     }
                 }
                 if (children != null) foreach (var child in children.Values) child.GetAllToggles(alltoggles, filterByState);
@@ -576,10 +682,11 @@ namespace FACS01.Utilities
 
             public void DisplayFoldable(bool go_enables_disp)
             {
-                EditorGUILayout.BeginHorizontal();
-                GUILayout.Space(foldoutDepth * 13);
+                EditorGUILayout.BeginHorizontal(GUILayout.Height(16), GUILayout.ExpandWidth(true));
+                GUILayout.Space(foldoutDepth * 13 + 3);
+                var r = EditorGUILayout.GetControlRect(false, 16, GUILayout.MinWidth(contentWidth), GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(false));
                 EditorGUI.BeginChangeCheck();
-                unfolded = GUILayout.Toggle(unfolded, content, foldoutStyle, GUILayout.Height(16), GUILayout.Width(content_width));
+                unfolded = GUI.Toggle(r, unfolded, content, GUITools.FoldoutStyle);
                 if (EditorGUI.EndChangeCheck())
                 {
                     if (Event.current.control)
@@ -591,18 +698,19 @@ namespace FACS01.Utilities
                         else SetAllFoldouts(false);
                     }
                 }
-                GUILayout.FlexibleSpace();
-                if (GUILayout.Button("All", GUILayout.Height(16)))
+
+                if (GUILayout.Button("All", GUILayout.Height(16), GUILayout.Width(26)))
                 {
                     if (Event.current.control) SetAllTogglesRecursive(true, go_enables_disp);
-                    else SetAllToggles(true, go_enables_disp);
+                    else SetAllToggles(true, go_enables_disp, false);
                 }
-                if (GUILayout.Button("None", GUILayout.Height(16)))
+                if (GUILayout.Button("None", GUILayout.Height(16), GUILayout.Width(44)))
                 {
                     if (Event.current.control) SetAllTogglesRecursive(false, go_enables_disp);
-                    else SetAllToggles(false, go_enables_disp);
+                    else SetAllToggles(false, go_enables_disp, false);
                 }
 
+                GUILayout.Space(3);
                 EditorGUILayout.EndHorizontal();
             }
 
@@ -643,13 +751,11 @@ namespace FACS01.Utilities
 
             public List<ComponentToggle> toggleList;
             public GUIContent content;
-            public float content_width;
 
             public FoldableType(GUIContent _content)
             {
                 toggleList = new();
                 content = _content;
-                content_width = GUI.skin.toggle.CalcSize(new GUIContent(content.text)).x + 20;
             }
 
             public HashSet<T> GetAllToggles<T>(int filter) where T : Component
@@ -665,6 +771,25 @@ namespace FACS01.Utilities
                         break;
                     default:
                         foreach (var t in toggleList) selectedToggles.Add(t.component as T);
+                        break;
+                }
+                if (selectedToggles.Count > 0) return selectedToggles;
+                return null;
+            }
+
+            public Dictionary<T, ComponentToggle> GetAllTogglesDict<T>(int filter) where T : Component
+            {
+                var selectedToggles = new Dictionary<T, ComponentToggle>();
+                switch (filter)
+                {
+                    case 1:
+                        foreach (var t in toggleList) if (t.state) selectedToggles.Add(t.component as T, t);
+                        break;
+                    case -1:
+                        foreach (var t in toggleList) if (!t.state) selectedToggles.Add(t.component as T, t);
+                        break;
+                    default:
+                        foreach (var t in toggleList) selectedToggles.Add(t.component as T, t);
                         break;
                 }
                 if (selectedToggles.Count > 0) return selectedToggles;
@@ -699,8 +824,6 @@ namespace FACS01.Utilities
             public Component component;
             public string GOName;
             public GUIContent content;
-            public float content_width;
-            public float GOName_width;
             public FoldableHierarchy parent;
 
             public ComponentToggle(Component c, GUIContent _content, FoldableHierarchy _parent)
@@ -708,8 +831,6 @@ namespace FACS01.Utilities
                 component = c;
                 GOName = c.name;
                 content = _content;
-                content_width = GUI.skin.toggle.CalcSize(new GUIContent(content.text)).x + 20;
-                GOName_width = GUI.skin.toggle.CalcSize(new GUIContent(GOName)).x + 20;
                 parent = _parent;
             }
         }
@@ -722,7 +843,22 @@ namespace FACS01.Utilities
             public TypeData(UnityEngine.Object c)
             {
                 type = c.GetType();
-                content = new(ObjectNames.NicifyVariableName(type.Name), AssetPreview.GetMiniThumbnail(c));
+                var thumbnail = AssetPreview.GetMiniThumbnail(c);
+                if (thumbnail.name == "d_DefaultAsset Icon" &&
+                    type.IsSubclassOf(typeof(MonoBehaviour)) &&
+                    AssetDatabase.GetAssetPath(thumbnail) == "Library/unity editor resources")
+                {
+                    var tempGO = new GameObject("TEMP") { hideFlags = HideFlags.DontSaveInEditor | HideFlags.DontSaveInBuild };
+                    tempGO.SetActive(false);
+                    var tempMB = tempGO.AddComponent(type);
+                    if (tempMB)
+                    {
+                        thumbnail = AssetPreview.GetMiniThumbnail(tempMB);
+                        UnityEngine.Object.DestroyImmediate(tempMB);
+                    }
+                    UnityEngine.Object.DestroyImmediate(tempGO);
+                }
+                content = new(ObjectNames.NicifyVariableName(type.Name), thumbnail);
             }
         }
     }

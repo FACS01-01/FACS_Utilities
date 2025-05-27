@@ -16,8 +16,9 @@ namespace FACS01.Utilities
         private static ComponentHierarchy skinnedRendHierarchy;
         private static bool toggleSelection = true;
         private static float looseMultiplier = 1.4f;
+        private static int missingRBs = 0;
 
-        [MenuItem("FACS Utils/Miscellaneous/Better Avatar Bounds", false, 1100)]
+        [MenuItem("FACS Utils/Avatar Tools/Better Avatar Bounds", false, 1101)]
         private static void ShowWindow()
         {
             var window = GetWindow(typeof(BetterBounds), false, "Better Bounds", true);
@@ -75,6 +76,7 @@ namespace FACS01.Utilities
                 {
                     if (GUILayout.Button("Exact Bounds", FacsGUIStyles.Button, GUILayout.Height(40)))
                     {
+                        missingRBs = 0;
                         var tmp = skinnedRendHierarchy.GetAllToggles<SkinnedMeshRenderer>(1);
                         float N = 1.0f / tmp.Count; float n = N / 2;
                         foreach (var smr in tmp)
@@ -88,7 +90,7 @@ namespace FACS01.Utilities
                         EditorUtility.ClearProgressBar();
                         if (!IsNotPartOfPrefabAsset) PrefabUtility.SavePrefabAsset(avatar);
                         Undo.CollapseUndoOperations(Undo.GetCurrentGroup());
-                        Logger.Log($"{RichToolName} Finished applying {Logger.ConceptTag}Exact Bounds{Logger.EndTag} to: {Logger.AssetTag}{avatar.name}{Logger.EndTag}", avatar);
+                        Logger.Log($"{RichToolName} Finished applying {Logger.ConceptTag}Exact Bounds{Logger.EndTag} to: {Logger.AssetTag}{avatar.name}{Logger.EndTag}{(missingRBs > 0 ? $" (<b>{missingRBs}</b> warnings)" : "")}", avatar);
                     }
                     EditorGUILayout.BeginHorizontal();
                     EditorGUILayout.LabelField("Loose Multiplier", GUILayout.Width(100));
@@ -126,8 +128,18 @@ namespace FACS01.Utilities
         {
             smr.updateWhenOffscreen = false;
 
+            var missingRB = false;
             var rootBone = smr.rootBone;
-            if (!rootBone) rootBone = smr.bones[0];
+            if (!rootBone)
+            {
+                rootBone = smr.bones[0];
+                if (!rootBone)
+                {
+                    missingRB = true; missingRBs++;
+                    rootBone = smr.transform;
+                    Logger.LogWarning($"{RichToolName} Found a {Logger.RichSkinnedMeshRenderer} without valid {Logger.ConceptTag}Root Bone{Logger.EndTag}: {Logger.AssetTag}{smr.name}{Logger.EndTag}", smr);
+                }
+            }
 
             var deltaPos = smr.transform.position - rootBone.position;
             var deltaRot = smr.transform.rotation;
@@ -136,11 +148,13 @@ namespace FACS01.Utilities
             Mesh tempMesh = new(); smr.BakeMesh(tempMesh);
             tempMesh.vertices = tempMesh.vertices.Select(v => (Vector3)(rootBoneMatrix*smrMatrix.MultiplyPoint3x4(v))).ToArray();
             tempMesh.RecalculateBounds();
-            smr.localBounds = tempMesh.bounds; smr.rootBone = rootBone;
+            smr.localBounds = tempMesh.bounds;
+            if (!missingRB) smr.rootBone = rootBone;
         }
 
         private static void LooseBoundsRoutine()
         {
+            missingRBs = 0;
             var tmp = skinnedRendHierarchy.GetAllToggles<SkinnedMeshRenderer>(1);
             float N = 1.0f / tmp.Count; float n = N / 2;
             foreach (var smr in tmp)
@@ -154,13 +168,14 @@ namespace FACS01.Utilities
             Dictionary<Transform, List<SkinnedMeshRenderer>> groups = new();
             foreach (var smr in tmp)
             {
-                if (groups.ContainsKey(smr.rootBone)) groups[smr.rootBone].Add(smr);
-                else groups.Add(smr.rootBone, new List<SkinnedMeshRenderer> { smr });
+                var smrKey = smr.rootBone ? smr.rootBone : smr.transform;
+                if (groups.ContainsKey(smrKey)) groups[smrKey].Add(smr);
+                else groups.Add(smrKey, new List<SkinnedMeshRenderer> { smr });
             }
             foreach (var l in groups.Values) LooseBounds(l);
             if (!IsNotPartOfPrefabAsset) PrefabUtility.SavePrefabAsset(avatar);
             Undo.CollapseUndoOperations(Undo.GetCurrentGroup());
-            Logger.Log($"{RichToolName} Finished applying {Logger.ConceptTag}Loose Bounds{Logger.EndTag} to: {Logger.AssetTag}{avatar.name}{Logger.EndTag}", avatar);
+            Logger.Log($"{RichToolName} Finished applying {Logger.ConceptTag}Loose Bounds{Logger.EndTag} to: {Logger.AssetTag}{avatar.name}{Logger.EndTag}{(missingRBs>0?$" (<b>{missingRBs}</b> warnings)":"")}", avatar);
         }
 
         private static void LooseBounds(List<SkinnedMeshRenderer> smrL)

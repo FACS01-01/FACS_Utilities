@@ -128,7 +128,11 @@ namespace FACS01.Utilities
                     progressbar++;
                     
                     if (registerUndo) Undo.RecordObject(mat.mat, "Shader Reassign");
+                    int rq;
+                    using (var so = new SerializedObject(mat.mat))
+                    { rq = so.FindProperty("m_CustomRenderQueue").intValue; }
                     mat.mat.shader = sh;
+                    mat.mat.renderQueue = rq;
                     if (!registerUndo) EditorUtility.SetDirty(mat.mat);
                 }
             }
@@ -218,7 +222,7 @@ namespace FACS01.Utilities
                 if (!shaderFiles.Contains(shaderpath)) continue;
 
                 string GUID = "";
-                using (StreamReader sr = new(path))
+                using (StreamReader sr = new(@"\\?\" + Path.GetFullPath(path)))
                 {
                     while (sr.Peek() != -1)
                     {
@@ -282,7 +286,7 @@ namespace FACS01.Utilities
                     string shaderGUID = ""; string shaderFileID = "";
                     if (shaderName == "Hidden/InternalErrorShader")
                     {
-                        using (StreamReader sr = new(matpath))
+                        using (StreamReader sr = new(@"\\?\" + Path.GetFullPath(matpath)))
                         {
                             while (sr.Peek() > 0)
                             {

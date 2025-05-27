@@ -177,7 +177,6 @@ namespace FACS01.Utilities
                         {
                             if (!EditorGUI_ValidDroppedObject(DragAndDrop.objectReferences, out var errorStr))
                             {
-                                Object @object = DragAndDrop.objectReferences[0];
                                 EditorUtility.DisplayDialog("Can't assign script", errorStr, "OK");
                                 break;
                             }
@@ -309,8 +308,7 @@ namespace FACS01.Utilities
         {
             errorString = "";
             if (references == null || references.Length == 0) return true;
-            Object @object = references[0];
-            Object object2 = @object; //EditorUtility.InstanceIDToObject(@object.GetInstanceID());
+            Object object2 = references[0];
             if ((object2 is MonoBehaviour || object2 is ScriptableObject))
             {
                 InvokeArray1[0] = object2;
@@ -318,7 +316,7 @@ namespace FACS01.Utilities
                 InvokeArray1[0] = null;
                 if (!hasValid)
                 {
-                    errorString = string.Format("Type cannot be found: {0}. Containing file and class name must match.", @object.GetType());
+                    errorString = string.Format("Type cannot be found: {0}. Containing file and class name must match.", object2.GetType());
                     return false;
                 }
             }

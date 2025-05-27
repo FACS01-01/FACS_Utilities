@@ -24,8 +24,8 @@ namespace FACS01.Utilities
         
         public static void ReduceToMainTypes(List<Type> types)
         {
-            var types2 = new List<Type>();
-            foreach (var t in types) if (!types2.Contains(t)) types2.Add(t);
+            if (types.Count < 2) return;
+            var types2 = types.Distinct().Where(T => T != null).ToArray();
             types.Clear();
             foreach (var t in types2) if (!types2.Any(tt => t.IsSubclassOf(tt))) types.Add(t);
         }
@@ -74,6 +74,77 @@ namespace FACS01.Utilities
             orfh.GetAllAssetsOfType(c, assetT, addTo);
         }
 
+        public static bool TryGetAssetsAndSources(List<GameObject> GOs, Type[] AssetTypes, out List<GameObject> roots, out List<List<Object>> sources)
+        {
+            roots = new(); sources = new();
+
+            var cleanGOs = GOs.Where(go => go).Distinct().ToList();
+            var cleanGOsCount = cleanGOs.Count;
+            if (cleanGOsCount == 0)
+            {
+                roots = null; sources = null;
+                return false;
+            }
+            for (int i = 0; i < cleanGOsCount; i++)
+            {
+                for (int j = 0; j < cleanGOsCount; j++)
+                {
+                    if (i == j) continue;
+                    if (cleanGOs[i].transform.IsChildOf(cleanGOs[j].transform))
+                    {
+                        cleanGOs.RemoveAt(i);
+                        cleanGOsCount--;
+                        i--;
+                        break;
+                    }
+                }
+            }
+
+            if (AssetTypes.Length == 0)
+            {
+                roots = null; sources = null;
+                return false;
+            }
+            var AssetTypes2 = new List<Type>(AssetTypes);
+            ReduceToMainTypes(AssetTypes2);
+            var ComponentTsUsingAssets = new List<Type>();
+            foreach (var T in AssetTypes2) ComponentsUsingAsset(T, ComponentTsUsingAssets);
+            if (ComponentTsUsingAssets.Count == 0)
+            {
+                roots = null; sources = null;
+                return false;
+            }
+            ReduceToMainTypes(ComponentTsUsingAssets);
+
+            Dictionary<GameObject, List<Component>> groupedRoots = new();
+            foreach (var go in cleanGOs)
+            {
+                foreach (var T in ComponentTsUsingAssets)
+                {
+                    var Cs = go.GetComponentsInChildren(T, true).Where(c=>c).ToList();
+                    if (Cs.Count != 0)
+                    {
+                        foreach (var go_Cs in Cs.GroupBy(c => c.gameObject))
+                        {
+                            if (groupedRoots.TryGetValue(go_Cs.Key, out var comps)) comps.AddRange(go_Cs);
+                            else groupedRoots[go_Cs.Key] = go_Cs.ToList();
+                        }
+                    }
+                }
+            }
+
+            foreach (var go_components in groupedRoots)
+            {
+                var foundAssets = new List<Object>();
+                foreach (var assetT in AssetTypes2) foreach (var c in go_components.Value) GetAllAssetsOfType(c, assetT, foundAssets);
+                if (foundAssets.Count != 0) { roots.Add(go_components.Key); sources.Add(foundAssets); }
+            }
+
+            if (roots.Count != 0) return true;
+            roots = null; sources = null;
+            return false;
+        }
+
         internal static Component TryAddComponent(GameObject GO, Type t)
         {
             Component c = null;
@@ -93,7 +164,9 @@ namespace FACS01.Utilities
                         }
                     }
                 }
-                else if (!msg.StartsWith("'type' parameter is abstract and can't be used in the ObjectFactory")) Logger.LogWarning($"{RichToolName} {t.FullName}: {msg}");
+                else if (!msg.StartsWith("'type' parameter is abstract and can't be used in the ObjectFactory") &&
+                    !msg.EndsWith("because it is an editor script. To attach a script it needs to be outside the 'Editor' folder."))
+                { Logger.LogWarning($"{RichToolName} {t.FullName}: {msg}"); }
             }
             return c;
         }

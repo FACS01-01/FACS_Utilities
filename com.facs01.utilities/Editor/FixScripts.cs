@@ -219,7 +219,7 @@ namespace FACS01.Utilities
             if (selectedFolder) rootFolder = AssetDatabase.GetAssetPath(selectedFolder);
             else
             {
-                rootFolder = Application.dataPath;
+                rootFolder = "Assets";
                 if (!EditorUtility.DisplayDialog("FACS Utilities - Fix Scripts", "If you don't select a folder to start scanning and fixing assets, " +
                     "the program will use the main Assets folder of the project. The more assets inside the selected folder, " +
                     "the more time it will take to complete.", "Continue", "Cancel")) return;
@@ -282,7 +282,7 @@ namespace FACS01.Utilities
 
             if (progressTotal == 0)
             {
-                Logger.LogWarning(RichToolName + " No asset inside the selected folder to fix."); return;
+                Logger.LogWarning(RichToolName + " No valid asset inside the selected folder."); return;
             }
 
             Selection.activeObject = null;
@@ -325,8 +325,7 @@ namespace FACS01.Utilities
             foreach (var scriptFolder in scriptFolders) DeleteEmptyDirs(scriptFolder);
             foreach (var scriptFolder in scriptFolders)
             {
-                var relativeFolderPath = scriptFolder[(Directory.GetCurrentDirectory().Length + 1)..];
-                if (!Directory.Exists(scriptFolder)) Logger.Log($"{RichToolName} The folder \"{relativeFolderPath}\" wasn't needed anymore and was deleted.");
+                if (!Directory.Exists(scriptFolder)) Logger.Log($"{RichToolName} The folder \"{scriptFolder}\" wasn't needed anymore and was deleted.");
             }
         }
 
@@ -356,7 +355,7 @@ namespace FACS01.Utilities
         {
             var fixedfile = false;
             var tempfilepath = FileUtil.GetUniqueTempPathInProject();
-            using (var reader = new StreamReader(filepath))
+            using (var reader = new StreamReader(@"\\?\" + Path.GetFullPath(filepath)))
             {
                 using (var writer = new StreamWriter(tempfilepath))
                 {
@@ -399,7 +398,7 @@ namespace FACS01.Utilities
         {
             var fixedfile = false;
             var tempfilepath = FileUtil.GetUniqueTempPathInProject();
-            using (var reader = new StreamReader(filepath))
+            using (var reader = new StreamReader(@"\\?\" + Path.GetFullPath(filepath)))
             {
                 using (var writer = new StreamWriter(tempfilepath))
                 {
@@ -472,7 +471,7 @@ namespace FACS01.Utilities
                     .Select(p => p.Substring(p.IndexOf('/') + 1, p.Length - 9 - p.IndexOf('/')).Replace("/", ".")).ToArray();
                 for (int i = 0; i < metaPaths.Length; i++)
                 {
-                    using (var file = new StreamReader(metaPaths[i], System.Text.Encoding.UTF8))
+                    using (var file = new StreamReader(@"\\?\" + Path.GetFullPath(metaPaths[i]), System.Text.Encoding.UTF8))
                     {
                         while (!file.EndOfStream)
                         {

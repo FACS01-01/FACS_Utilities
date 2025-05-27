@@ -10,17 +10,10 @@ namespace FACS01.Utilities
     internal class FixAnimations : EditorWindow
     {
         private const string RichToolName = Logger.ToolTag + "[Fix Animations]" + Logger.EndTag;
-        private const string AnimationRootName = "Animation Root";
-        private const string RichAnimationRootName = Logger.ConceptTag + AnimationRootName + Logger.EndTag;
-        private const string AnimationSourcesName = "Animation Sources";
-        private const string RichAnimationSourcesName = Logger.ConceptTag + AnimationSourcesName + Logger.EndTag;
+        private const string RichAnimationSourcesName = Logger.ConceptTag + "Animation Sources" + Logger.EndTag;
 
-        private static float windowWidth;
-        private static Vector2 scrollView;
         private static FACSGUIStyles FacsGUIStyles;
-        private static readonly List<GameObject> animationRoots = new() { null };
-        private static readonly List<List<Object>> animationSources = new() { new() { null } };
-        private static readonly System.Type[] AnimationSourceTypes = new System.Type[] { typeof(RuntimeAnimatorController), typeof(AnimationClip) };
+        private readonly static AnimationsFromGOs AFGOs = new();
 
         private static string Results = null;
 
@@ -41,23 +34,12 @@ namespace FACS01.Utilities
                 FacsGUIStyles.Helpbox.alignment = TextAnchor.MiddleCenter;
                 FacsGUIStyles.Label.wordWrap = false;
             }
-            windowWidth = this.position.size.x;
+            var windowWidth = this.position.size.x;
             EditorGUILayout.LabelField($"<color=cyan><b>Fix Animations</b></color>\n\n" +
                 $"Scans Animations inside the selected Animation Sources, and tries to repair broken paths and properties, " +
                 $"comparing them to their respective Animation Root.\n", FacsGUIStyles.Helpbox);
-            
-            EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("Animation Roots", FacsGUIStyles.Helpbox, GUILayout.MaxWidth(windowWidth / 2));
-            EditorGUILayout.LabelField("Animation Sources", FacsGUIStyles.Helpbox, GUILayout.MaxWidth(windowWidth / 2));
-            EditorGUILayout.EndHorizontal();
 
-            scrollView = EditorGUILayout.BeginScrollView(scrollView, GUILayout.ExpandHeight(true));
-            int root_i = 0;
-            while (root_i < animationRoots.Count)
-            { if (DisplayAnimationRoot(root_i)) root_i++; }
-            if (animationRoots[^1])
-            { animationRoots.Add(null); animationSources.Add(new() { null }); }
-            EditorGUILayout.EndScrollView();
+            AFGOs.OnGUI(FacsGUIStyles, windowWidth);
 
             GUILayout.Space(10);
             if (!string.IsNullOrEmpty(Results)) EditorGUILayout.LabelField(Results, FacsGUIStyles.Helpbox);
@@ -66,9 +48,9 @@ namespace FACS01.Utilities
             EditorGUILayout.BeginHorizontal();
             GUILayout.FlexibleSpace();
             EditorGUILayout.BeginVertical();
-            if (animationRoots.Count > 1 &&
+            if (AFGOs.animationRoots.Count > 1 &&
                 GUILayout.Button("Auto Detect", FacsGUIStyles.Button, GUILayout.Height(20), GUILayout.MaxWidth(windowWidth * 0.75f))) AutoDetect();
-            if (animationSources.Any(animS => animS.Count > 1) &&
+            if (AFGOs.animationSources.Any(animS => animS.Count > 1) &&
                 GUILayout.Button("Run!", FacsGUIStyles.Button, GUILayout.Height(40), GUILayout.MaxWidth(windowWidth * 0.75f))) RunFix();
             EditorGUILayout.EndVertical();
             GUILayout.FlexibleSpace();
@@ -78,85 +60,8 @@ namespace FACS01.Utilities
         private void AutoDetect()
         {
             Results = null;
-            var independentGOs = new List<GameObject>();
-            foreach (var go in animationRoots)
-            {
-                if (!go) continue;
-                if (animationRoots.Any(g => g && go != g && go.transform.IsChildOf(g.transform))) continue;
-                if (!independentGOs.Contains(go)) independentGOs.Add(go);
-            }
 
-            var hasAny = ComponentDependencies.ComponentsUsingAsset(typeof(RuntimeAnimatorController));
-            ComponentDependencies.ComponentsUsingAsset(typeof(AnimationClip), hasAny);
-            ComponentDependencies.ReduceToMainTypes(hasAny);
-            var foundAssets = new List<Object>();
-
-            var allComponents = new List<Component>();
-            foreach (var go in independentGOs)
-            { foreach (var compT in hasAny) allComponents.AddRange(go.GetComponentsInChildren(compT, true)); }
-            var allComponentsByGO = allComponents.GroupBy(c => c.gameObject);
-
-            var shouldClear = true;
-            foreach (var go_components in allComponentsByGO)
-            {
-                foreach (var c in go_components) ComponentDependencies.GetAllAssetsOfType(c, typeof(RuntimeAnimatorController), foundAssets);
-                foreach (var c in go_components) ComponentDependencies.GetAllAssetsOfType(c, typeof(AnimationClip), foundAssets);
-                if (foundAssets.Count > 0)
-                {
-                    if (shouldClear) { animationRoots.Clear(); animationSources.Clear(); shouldClear = false; }
-                    animationRoots.Add(go_components.Key); foundAssets.Add(null); animationSources.Add(foundAssets);
-                    foundAssets = new();
-                }
-            }
-            if (!shouldClear) { animationRoots.Add(null); animationSources.Add(new() { null }); }
-            else
-            {
-                ShowNotification(new GUIContent("No " + AnimationRootName + "\nhas " + AnimationSourcesName));
-                Logger.LogWarning($"{RichToolName} No {RichAnimationRootName} has {RichAnimationSourcesName}.");
-                return;
-            }
-            Logger.Log(RichToolName + " Auto Detect finished!");
-        }
-
-        private static bool DisplayAnimationRoot(int i)
-        {
-            if (!animationRoots[i] && i != animationRoots.Count - 1)
-            { animationRoots.RemoveAt(i); animationSources.RemoveAt(i); return false; }
-            EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.BeginVertical();
-            EditorGUI.BeginChangeCheck();
-            var newRoot_i = (GameObject)EditorGUILayout.ObjectField(animationRoots[i], typeof(GameObject), true, GUILayout.MaxWidth(windowWidth / 2));
-            if (EditorGUI.EndChangeCheck())
-            { if (!newRoot_i || !animationRoots.Contains(newRoot_i)) animationRoots[i] = newRoot_i; }
-            EditorGUILayout.EndVertical();
-            EditorGUILayout.BeginVertical();
-            if (animationRoots[i])
-            {
-                int source_i_j = 0;
-                var sources_i = animationSources[i];
-                while (source_i_j < sources_i.Count)
-                { if (DisplayAnimationSources(sources_i, source_i_j)) source_i_j++; }
-                if (sources_i[^1]) sources_i.Add(null);
-            }
-            EditorGUILayout.EndVertical();
-            EditorGUILayout.EndHorizontal();
-            return true;
-        }
-
-        private static bool DisplayAnimationSources(List<Object> sources_i, int j)
-        {
-            if (!sources_i[j] && j != sources_i.Count - 1)
-            { sources_i.RemoveAt(j); return false; }
-            EditorGUI.BeginChangeCheck();
-            var newsource_i_j = ReflectionTools.ObjectFieldTs(sources_i[j], AnimationSourceTypes, true, GUILayout.MaxWidth(windowWidth / 2));
-            if (EditorGUI.EndChangeCheck())
-            {
-                if (!newsource_i_j) { sources_i[j] = null; return true; }
-                var newsourceT = newsource_i_j.GetType();
-                if ((newsourceT.IsSubclassOf(typeof(RuntimeAnimatorController)) || newsourceT == typeof(AnimationClip))
-                    && !sources_i.Contains(newsource_i_j)) sources_i[j] = newsource_i_j;
-            }
-            return true;
+            if (!AFGOs.AutoDetect(RichToolName)) ShowNotification(new GUIContent("No Animation Root\nhas Animation Sources"));
         }
 
         private static void RunFix()
@@ -173,8 +78,7 @@ namespace FACS01.Utilities
 
         private void NullVars()
         {
-            animationRoots.Clear(); animationRoots.Add(null);
-            animationSources.Clear(); animationSources.Add(new() { null });
+            AFGOs.Clear();
             Results = null;
         }
 
@@ -211,10 +115,72 @@ namespace FACS01.Utilities
             Dictionary<AnimationClip, FixedData> Fixes = new();
             Dictionary<AnimationClip, BrokenData> Brokens = new();
 
-            Regex PathRegex = new(@"^path_0x([0-F]+)_([a-zA-Z0-9]+)");
-            Regex ParticleSystemRegex = new(@"^ParticleSystem_0x([0-F]+)_([a-zA-Z0-9]+)");
-            Regex VisualEffectRegex = new(@"^VisualEffect_0x([0-F]+)_([a-zA-Z0-9]+)");
-            Regex UserDefinedRegex = new(@"^UserDefined_0x([0-F]+)_([a-zA-Z0-9]+)");
+            static Regex PathRegex = new(@"^path_0x([0-F]+)_([a-zA-Z0-9]+)");
+            static Regex GameObjectRegex = new(@"^missed_0x([0-F]+)_([a-zA-Z0-9]+)");
+            static Regex MonoBehaviourRegex = new(@"^script_0x([0-F]+)_([a-zA-Z0-9]+)");
+            static Regex EngineTypeRegex = new(@"^typetree_0x([0-F]+)_([a-zA-Z0-9]+)");
+            static Regex ParticleSystemRegex = new(@"^ParticleSystem_0x([0-F]+)_([a-zA-Z0-9]+)");
+            static Regex VisualEffectRegex = new(@"^VisualEffect_0x([0-F]+)_([a-zA-Z0-9]+)");
+            static Regex ParticleForceFieldRegex = new(@"^ParticleForceField_0x([0-F]+)_([a-zA-Z0-9]+)");
+            static Regex UserDefinedRegex = new(@"^UserDefined_0x([0-F]+)_([a-zA-Z0-9]+)");
+            static Regex MeshFilterRegex = new(@"^MeshFilter_0x([0-F]+)_([a-zA-Z0-9]+)");
+
+            static (bool,bool,uint) TryParseUint(string hash)
+            {
+                var hasbrokenHash = uint.TryParse(hash, out var brokenHash);
+                return (true, hasbrokenHash, brokenHash);
+            }
+
+            Dictionary<System.Type, System.Func<(bool hasbrokenKW, bool hasbrokenHash, uint brokenHash)>> TypePropUnhash = new()
+            {
+                {
+                    typeof(SkinnedMeshRenderer), () =>
+                    {
+                        if (analyzingPROPERTYNAME.StartsWith("blendShape.")) return TryParseUint(analyzingPROPERTYNAME[11..]);
+                        return (false, false, 0);
+                    }
+                },
+                {
+                    typeof(ParticleSystem), () =>
+                    {
+                        var match = ParticleSystemRegex.Match(analyzingPROPERTYNAME);
+                        if (match.Success) return TryParseUint(match.Groups[1].Value);
+                        return (false, false, 0);
+                    }
+                },
+                {
+                    typeof(UnityEngine.VFX.VisualEffect), () =>
+                    {
+                        var match = VisualEffectRegex.Match(analyzingPROPERTYNAME);
+                        if (match.Success) return TryParseUint(match.Groups[1].Value);
+                        return (false, false, 0);
+                    }
+                },
+                {
+                    typeof(ParticleSystemForceField), () =>
+                    {
+                        var match = ParticleForceFieldRegex.Match(analyzingPROPERTYNAME);
+                        if (match.Success) return TryParseUint(match.Groups[1].Value);
+                        return (false, false, 0);
+                    }
+                },
+                {
+                    typeof(MeshFilter), () =>
+                    {
+                        var match = MeshFilterRegex.Match(analyzingPROPERTYNAME);
+                        if (match.Success) return TryParseUint(match.Groups[1].Value);
+                        return (false, false, 0);
+                    }
+                },
+                {
+                    typeof(GameObject), () =>
+                    {
+                        var match = GameObjectRegex.Match(analyzingPROPERTYNAME);
+                        if (match.Success) return TryParseUint(match.Groups[1].Value);
+                        return (false, false, 0);
+                    }
+                },
+            };
 
             bool analyzingCBObjRef = false;
             AnimationClip analyzingAC = null;
@@ -223,30 +189,31 @@ namespace FACS01.Utilities
             string analyzingNEWPATH = null;
             System.Type analyzingTYPE = null;
             bool analyzingNEWTYPE = false;
-            string analyzingPROPERTYNAME = null;
+            static string analyzingPROPERTYNAME = null;
 
             internal FixAnimationsData()
             {
-                for (int i = animationRoots.Count - 2; i >= 0; i--)
+                analyzingPROPERTYNAME = null;
+                for (int i = AFGOs.animationRoots.Count - 2; i >= 0; i--)
                 {
                     var validGO = false; addedACs.Clear();
-                    var sources = animationSources[i];
+                    var sources = AFGOs.animationSources[i];
                     for (int j = 0; j < sources.Count - 1; j++)
                     {
                         var asset = sources[j];
                         if (!asset) { sources.RemoveAt(j); j--; continue; }
                         if (asset is RuntimeAnimatorController rac)
                         {
-                            if (AddAnimationClips(rac.animationClips, animationRoots[i])) validGO = true;
+                            if (AddAnimationClips(rac.animationClips, AFGOs.animationRoots[i])) validGO = true;
                             else { sources.RemoveAt(j); j--; }
                         }
                         else if (asset is AnimationClip ac)
                         {
-                            if (AddAnimationClip(ac, animationRoots[i])) validGO = true;
+                            if (AddAnimationClip(ac, AFGOs.animationRoots[i])) validGO = true;
                             else { sources.RemoveAt(j); j--; }
                         }
                     }
-                    if (!validGO) { animationRoots.RemoveAt(i); animationSources.RemoveAt(i); }
+                    if (!validGO) { AFGOs.animationRoots.RemoveAt(i); AFGOs.animationSources.RemoveAt(i); }
                 }
                 addedACs.Clear();
                 var animClipsN = AnimsToOrigins.Count * 2;
@@ -274,7 +241,7 @@ namespace FACS01.Utilities
                     foreach (var cb in AnimationUtility.GetCurveBindings(analyzingAC)) AnalyzePath(kvp.Value, cb);
                 }
                 EditorUtility.DisplayProgressBar("FACS Utilities - Fix Animations", "Please wait...", 1);
-                foreach (var modAC in addedACs) AssetDatabase.SaveAssetIfDirty(modAC);//
+                foreach (var modAC in addedACs) AssetDatabase.SaveAssetIfDirty(modAC);
 
                 Results = "";
                 if (Fixes.Count>0) Results += $"\nFixed {Logger.RichAnimationClips}: <b>{Fixes.Count}</b>";
@@ -403,69 +370,35 @@ namespace FACS01.Utilities
                 {
                     if (analyzingPROPERTYNAME.StartsWith("material."))
                     {
-                        hasbrokenKW = true;
                         foreach (var path in paths)
                         {
                             GetAnimatableBindings(path);
-                            var types = GO_Types_Shaders[path];
+                            if (!GO_Types_Shaders.TryGetValue(path, out var types)) continue;
                             foreach (var t in types.Keys.OrderBy(t => ComponentDependencies.InheritanceDepth(t, typeof(Component))))
                             {
                                 if (!analyzingTYPE.IsAssignableFrom(t)) continue;
                                 analyzingNEWTYPE = true;
                                 var shadersInT = types[t];
                                 var matpropfix = AnalyzeMaterialProperty(shadersInT);
-                                if (matpropfix>0) return matpropfix;
+                                if (matpropfix > 0) return matpropfix;
                             }
                         }
                         return 0;
                     }
                 }
-                if (analyzingTYPE == typeof(SkinnedMeshRenderer))
+
+                if (TypePropUnhash.TryGetValue(analyzingTYPE, out var typePropUnhasher))
                 {
-                    if (analyzingPROPERTYNAME.StartsWith("blendShape."))
-                    {
-                        hasbrokenKW = true;
-                        hasbrokenHash = uint.TryParse(analyzingPROPERTYNAME[11..], out brokenHash);
-                    }
+                    var res = typePropUnhasher();
+                    hasbrokenKW = res.hasbrokenKW; hasbrokenHash = res.hasbrokenHash; brokenHash = res.brokenHash;
                 }
-                else if (analyzingTYPE == typeof(GameObject))
+                if (!hasbrokenKW)
                 {
-                    if (analyzingPROPERTYNAME.StartsWith("missed_"))
-                    {
-                        hasbrokenKW = true;
-                        hasbrokenHash = uint.TryParse(analyzingPROPERTYNAME[7..], out brokenHash);
-                    }
+                    Match match = typeof(MonoBehaviour).IsAssignableFrom(analyzingTYPE) ?
+                        MonoBehaviourRegex.Match(analyzingPROPERTYNAME) : EngineTypeRegex.Match(analyzingPROPERTYNAME);
+                    if (match.Success) hasbrokenHash = uint.TryParse(match.Groups[1].Value, hexStyle, hexCulture, out brokenHash);
                 }
-                else if (analyzingTYPE == typeof(ParticleSystem))
-                {
-                    var match = ParticleSystemRegex.Match(analyzingPROPERTYNAME);
-                    if (match.Success)
-                    {
-                        hasbrokenKW = true;
-                        hasbrokenHash = uint.TryParse(match.Groups[1].Value, hexStyle, hexCulture, out brokenHash);
-                    }
-                }
-                else if (analyzingTYPE == typeof(UnityEngine.VFX.VisualEffect))
-                {
-                    var match = VisualEffectRegex.Match(analyzingPROPERTYNAME);
-                    if (match.Success)
-                    {
-                        hasbrokenKW = true;
-                        hasbrokenHash = uint.TryParse(match.Groups[1].Value, hexStyle, hexCulture, out brokenHash);
-                    }
-                }
-                else if (typeof(MonoBehaviour).IsAssignableFrom(analyzingTYPE))
-                {
-                    if (analyzingPROPERTYNAME.StartsWith("script_"))
-                    {
-                        hasbrokenKW = true;
-                        hasbrokenHash = uint.TryParse(analyzingPROPERTYNAME[7..], out brokenHash);
-                    }
-                }
-                if (!hasbrokenKW && !typeof(MonoBehaviour).IsAssignableFrom(analyzingTYPE) && analyzingPROPERTYNAME.StartsWith("typetree_"))
-                {
-                    hasbrokenHash = uint.TryParse(analyzingPROPERTYNAME[9..], out brokenHash);
-                }
+
                 foreach (var path in paths)
                 {
                     GetAnimatableBindings(path);
@@ -574,7 +507,8 @@ namespace FACS01.Utilities
             {
                 Dictionary<uint, string> htp = new();
                 HashSet<string> props = new();
-                for (int i = 0; i < shader.GetPropertyCount(); i++)
+                var shaderPropCount = shader.GetPropertyCount();
+                for (int i = 0; i < shaderPropCount; i++)
                 {
                     var propName = shader.GetPropertyName(i);
                     var propType = shader.GetPropertyType(i);

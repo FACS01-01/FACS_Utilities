@@ -36,7 +36,7 @@ namespace FACS01.Utilities
                 $"Dependencies on Blend Trees external to the selected Animator Controller, will be cloned and added as sub assets.\n", FacsGUIStyles.Helpbox);
 
             EditorGUI.BeginChangeCheck();
-            animatorController = (AnimatorController)EditorGUILayout.ObjectField(animatorController, typeof(AnimatorController), true, GUILayout.Height(40));
+            animatorController = (AnimatorController)EditorGUILayout.ObjectField(animatorController, typeof(AnimatorController), false, GUILayout.Height(40));
             if (EditorGUI.EndChangeCheck()) NullVars();
             if (!animatorController) { NullVars(); return; }
 
@@ -55,13 +55,13 @@ namespace FACS01.Utilities
                     var originalClip = kvp.Key; var props = kvp.Value;
                     var paths = props.paths;
                     EditorGUILayout.BeginHorizontal();
-                    props.foldout = GUILayout.Toggle(props.foldout, props.foldoutText, FacsGUIStyles.Foldout, GUILayout.Height(21), GUILayout.Width(props.foldoutWidth));
+                    if (GUILayout.Button('\u2197'.ToString(), GUILayout.Width(21))) EditorGUIUtility.PingObject(originalClip);
+                    props.foldout = GUILayout.Toggle(props.foldout, props.foldoutText, FacsGUIStyles.Foldout, GUILayout.Height(21), GUILayout.ExpandWidth(true));
                     var firsttoggle = paths[0].replace;
-                    if (GUILayout.Button($"{(firsttoggle ? "X" : "\u2713")}", GUILayout.Width(21)))
+                    if (GUILayout.Button($"{(firsttoggle ? "None" : "All")}", GUILayout.Width(44)))
                     {
                         foreach (var path in paths) path.replace = !firsttoggle;
                     }
-                    if (GUILayout.Button('\u2197'.ToString(), GUILayout.Width(21))) EditorGUIUtility.PingObject(originalClip);
                     EditorGUI.BeginChangeCheck();
                     props.newClip = (AnimationClip)EditorGUILayout.ObjectField(props.newClip, typeof(AnimationClip), false, GUILayout.Height(21), GUILayout.Width(170));
                     if (EditorGUI.EndChangeCheck() && originalClip == props.newClip) props.newClip = null;
@@ -394,15 +394,12 @@ namespace FACS01.Utilities
             {
                 public AnimationClip newClip = null;
                 public bool foldout = false;
-                public GUIContent foldoutText = null;
-                public float foldoutWidth;
+                public string foldoutText;
                 public List<AnimatorLayer.StateMachine.State.Animation_Clip> paths = new();
 
                 public AnimationClipReplacer(AnimationClip oldClip)
                 {
-                    foldoutText = new GUIContent($"<b>{oldClip.name}</b>");
-                    var w = FacsGUIStyles.Foldout.CalcSize(foldoutText).x + 10;
-                    foldoutWidth = w>200 ? w : 200;
+                    foldoutText = $"<b>{oldClip.name}</b>";
                 }
             }
             

@@ -162,9 +162,9 @@ namespace FACS01.Utilities
         private void GetAvailableMaterials()
         {
             var renderers = source.GetComponentsInChildren<Renderer>(true);
-            var notPrefabAsset = !PrefabUtility.IsPartOfPrefabAsset(source);
             if (renderers == null || renderers.Length == 0) { ShowNotification(new GUIContent("No Renderer found!")); return; }
 
+            var notPrefabAsset = !PrefabUtility.IsPartOfPrefabAsset(source);
             var matDict = new Dictionary<Material, MaterialItem>();
             var matDup = new List<Material>();
             foreach (var rend in renderers)

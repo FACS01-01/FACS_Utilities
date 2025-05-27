@@ -22,14 +22,21 @@ namespace FACS01.Utilities
         private static ComponentHierarchy componentHierarchy;
         private static bool toggleSelection = true;
         private static bool toggleHideSelection = true;
+        private static bool advancedFoldout = false;
         private static Dictionary<Transform, Transform> GO_Dictionary; //from,to
         private static Dictionary<Component, Component> C_Dictionary; //from,to
         private static int copyMissing = 0;
         private static bool selDepsRecursive = false;
         private static bool recordUndo = false;
+        private static bool skipExistingComponents = false;
+        private static bool onlyExistingComponents = false;
+        private static bool onlyExistingPaths = false;
+        private static ulong anythingCopiedN = 0;
         private static Dictionary<UnityEngine.Object, HashSet<UnityEngine.Object>> EXTssets = null;
         private static Dictionary<UnityEngine.Object, HashSet<UnityEngine.Object>> MIAssets = null;
         private static Dictionary<UnityEngine.Object, HashSet<UnityEngine.Object>> NANssets = null;
+        private static Dictionary<object, object> ManagedReferenceCopies = null;
+        private static bool fromFLB = false;
 
         [MenuItem("FACS Utils/Repair Project/Copy Components", false, 1053)]
         [MenuItem("FACS Utils/Copy/Copy Components", false, 1101)]
@@ -135,15 +142,71 @@ namespace FACS01.Utilities
                     {
                         componentHierarchy.SelectDependencies("Copy Components", selDepsRecursive);
                     }
-                    GUITools.ColoredToggle(ref selDepsRecursive, "Recursive Selection", GUILayout.Height(22));
+                    GUITools.ColoredToggle(ref selDepsRecursive, "Recursive", GUILayout.Height(22));
                     EditorGUILayout.EndHorizontal();
-                    if (copyToPrefab != null && GUILayout.Button("Copy!", FacsGUIStyles.Button, GUILayout.Height(40)))
+
+                    if (copyToPrefab)
                     {
-                        if (copyFromPrefab == copyToPrefab)
+                        EditorGUILayout.Space(1, false);
+                        EditorGUILayout.BeginHorizontal();
+                        EditorGUILayout.Space(14, false);
+
+                        var advRect = EditorGUILayout.BeginVertical(GUILayout.ExpandWidth(true));
+                        var newR = new Rect(advRect.position - Vector2.right * 4, advRect.size + Vector2.right * 8);
+                        EditorGUI.DrawRect(newR, GUITools.GetTintedBGColor(0.05f));
+                        EditorGUILayout.BeginHorizontal();
+                        GUILayout.Space(4);
+                        advancedFoldout = GUILayout.Toggle(advancedFoldout, "<b>Advanced Options</b>", FacsGUIStyles.Foldout, GUILayout.ExpandWidth(true));
+                        EditorGUILayout.EndHorizontal();
+                        if (advancedFoldout)
                         {
-                            Logger.LogWarning($"{RichToolName} You shouldn't use the same {Logger.RichGameObject} for {Logger.ConceptTag}CopyFrom{Logger.EndTag} and {Logger.ConceptTag}CopyTo{Logger.EndTag}.");
+                            EditorGUILayout.BeginHorizontal();
+
+                            EditorGUILayout.BeginVertical();
+                            EditorGUILayout.LabelField($"Matching Components:", FacsGUIStyles.Helpbox);
+                            EditorGUILayout.LabelField($"Matching Paths:", FacsGUIStyles.Helpbox);
+                            EditorGUILayout.EndVertical();
+
+                            EditorGUILayout.BeginVertical();
+                            EditorGUILayout.BeginHorizontal();
+                            if (GUITools.ColoredToggle(ref skipExistingComponents, "Skip", GUILayout.Height(22), GUILayout.ExpandHeight(true)))
+                            {
+                                if (skipExistingComponents) onlyExistingComponents = false;
+                            }
+                            if (GUITools.ColoredToggle(ref onlyExistingComponents, "Only", GUILayout.Height(22), GUILayout.ExpandHeight(true)))
+                            {
+                                if (onlyExistingComponents) { skipExistingComponents = false; onlyExistingPaths = true; }
+                            }
+                            EditorGUILayout.EndHorizontal();
+                            if (GUITools.ColoredToggle(ref onlyExistingPaths, "Only", GUILayout.Height(22)))
+                            {
+                                if (!onlyExistingPaths) onlyExistingComponents = false;
+                            }
+                            EditorGUILayout.EndVertical();
+
+                            EditorGUILayout.EndHorizontal();
+
+                            if (GUILayout.Button("Filter Selection", FacsGUIStyles.Button, GUILayout.Height(20), GUILayout.ExpandWidth(true)))
+                            {
+                                FilterSelection();
+                            }
+                            GUILayout.Space(4);
                         }
-                        else RunCopy();
+                        else GUILayout.Space(1);
+                        EditorGUILayout.EndVertical();
+
+                        EditorGUILayout.Space(10, false);
+                        EditorGUILayout.EndHorizontal();
+
+                        if (!advancedFoldout) EditorGUILayout.Space(2, false);
+                        if (GUILayout.Button("Copy!", FacsGUIStyles.Button, GUILayout.Height(40)))
+                        {
+                            if (copyFromPrefab == copyToPrefab)
+                            {
+                                Logger.LogWarning($"{RichToolName} You shouldn't use the same {Logger.RichGameObject} for {Logger.ConceptTag}CopyFrom{Logger.EndTag} and {Logger.ConceptTag}CopyTo{Logger.EndTag}.");
+                            }
+                            else RunCopy();
+                        }
                     }
                 }
             }
@@ -155,8 +218,25 @@ namespace FACS01.Utilities
             return !string.IsNullOrEmpty(AssetDatabase.GetAssetPath(go));
         }
 
+        private void FilterSelection()
+        {
+            GO_Dictionary = GODictionary(copyFrom.transform, copyToPrefab.transform);
+            CollapseAll();
+            componentHierarchy.UseUnfoldedAsMarker();
+            var toggledCount = FilterSelectionGOs();
+            toggledCount += FilterSelectionTransforms();
+            toggledCount += FilterSelectionComponents();
+            GO_Dictionary = null;
+            CollapseAll();
+            if (toggledCount == 1) Logger.Log($"{RichToolName} <b>1</b> component was deselected.");
+            else Logger.Log($"{RichToolName} <b>{toggledCount}</b> components were deselected.");
+        }
+
         private void RunCopy()
         {
+            anythingCopiedN = 0;
+            Undo.IncrementCurrentGroup();
+            int undoGroup = Undo.GetCurrentGroup();
             if (copyTo) DestroyImmediate(copyTo);
             recordUndo = !TrullyPersistent(copyToPrefab);
             if (recordUndo) copyTo = copyToPrefab;
@@ -165,31 +245,53 @@ namespace FACS01.Utilities
                 copyTo = PrefabUtility.InstantiatePrefab(copyToPrefab) as GameObject;
                 Undo.RegisterCreatedObjectUndo(copyTo, "Copy Components");
             }
-            
-            GODictionary(copyFrom.transform, copyTo.transform);
+
+            GO_Dictionary = GODictionary(copyFrom.transform, copyTo.transform);
             CollapseAll();
             componentHierarchy.UseUnfoldedAsMarker();
-            CreateMissingGOsAndSetEnables();
+            fromFLB = copyFrom.tag?.StartsWith(FACSLoadBundleData.FLBTag) ?? false;
+            CreateMissingsAndCopyGOs();
             CopyTransforms();
-            var Components_to_copy = ComponentDictionary_CreateMissingC();
-            MIAssets = new(); NANssets = new(); EXTssets = new();
-            CopyComponentsSerializedData(Components_to_copy);
-            LogSceneExternalComponents();
-            LogSkippedAssets();
-            var warnings = MIAssets.Count + NANssets.Count + EXTssets.Count;
-            MIAssets.Clear(); NANssets.Clear(); EXTssets.Clear();
-            MIAssets = NANssets = EXTssets = null;
-            CollapseAll();
 
+            var Components_to_copy = ComponentDictionary_CreateMissingC();
+            var CToCopyCount = Components_to_copy.Count;
+            var warnings = 0;
+            if (CToCopyCount > 0)
+            {
+                MIAssets = new(); NANssets = new(); EXTssets = new();
+                ManagedReferenceCopies = new();
+                CopyComponentsSerializedData(Components_to_copy);
+                ManagedReferenceCopies.Clear(); ManagedReferenceCopies = null;
+                LogSceneExternalComponents();
+                LogSkippedAssets();
+                warnings = MIAssets.Count + NANssets.Count + EXTssets.Count;
+                MIAssets.Clear(); NANssets.Clear(); EXTssets.Clear();
+                MIAssets = NANssets = EXTssets = null;
+            }
+            CollapseAll();
+            anythingCopiedN += (uint)CToCopyCount;
+            var anythingCopied = anythingCopiedN > 0;
             if (!recordUndo)
             {
-                Undo.SetCurrentGroupName("Copy Components");
-                PrefabUtility.ApplyPrefabInstance(copyTo, InteractionMode.UserAction);
+                if (anythingCopied)
+                {
+                    Undo.SetCurrentGroupName("Copy Components");
+                    PrefabUtility.ApplyPrefabInstance(copyTo, InteractionMode.UserAction);
+                }
                 DestroyImmediate(copyTo);
             }
             copyTo = null;
-            Undo.CollapseUndoOperations(Undo.GetCurrentGroup());
-            Logger.Log($"{RichToolName} Finished copying components!{(warnings>0?$" (with {warnings} warnings)":"")}");
+            GO_Dictionary = null;
+            C_Dictionary = null;
+            if (anythingCopied)
+            {
+                Undo.CollapseUndoOperations(undoGroup);
+                Logger.Log($"{RichToolName} Finished copying <b>{anythingCopiedN}</b> components!{(warnings > 0 ? $" <color=orange>(with {warnings} warnings)</color>" : "")}");
+            }
+            else
+            {
+                Logger.Log($"{RichToolName} <color=orange>No components were copied! Check your copy settings.</color>");
+            }
         }
 
         private void CopyComponentsSerializedData(List<Component> comps_to_copy)
@@ -211,10 +313,16 @@ namespace FACS01.Utilities
                 
                 var SO_from = new SerializedObject(comp_from);
                 var SO_to = new SerializedObject(comp_to);
+
+                var NoCopyProps = new List<string> { "m_ObjectHideFlags", "m_CorrespondingSourceObject", "m_PrefabInstance", "m_PrefabAsset", "m_GameObject", "m_Script" };
+                var hideFlags = SO_from.FindProperty("m_ObjectHideFlags");
+                var hideFlagsVal = hideFlags.enumValueFlag;
+                if (fromFLB) hideFlagsVal &= ~(int)(HideFlags.DontSaveInEditor | HideFlags.DontSaveInBuild);
+                SO_to.FindProperty("m_ObjectHideFlags").enumValueFlag = hideFlagsVal;
+
                 SerializedProperty SO_from_iterator = SO_from.GetIterator();
                 SO_from_iterator.Next(true);
-
-                var NoCopyProps = new List<string> { "m_CorrespondingSourceObject", "m_PrefabInstance", "m_PrefabAsset", "m_GameObject", "m_Script" };
+                
                 do
                 {
                     if (NoCopyProps.Contains(SO_from_iterator.name)) NoCopyProps.Remove(SO_from_iterator.name);
@@ -332,7 +440,11 @@ namespace FACS01.Utilities
                             {
                                 var go = (GameObject)objref;
                                 var t_from = go.transform;
-                                if (GO_Dictionary.TryGetValue(t_from, out Transform t_to)) objref = t_to.gameObject;
+                                if (GO_Dictionary.TryGetValue(t_from, out Transform t_to))
+                                {
+                                    if (t_to) objref = t_to.gameObject;
+                                    else objref = null;
+                                }
                                 else if (PrefabUtility.IsPartOfPrefabAsset(objref))
                                 { CopySerializedAsset(from_iterator, to_prop); break; }
                                 else if (go.scene.name == null || go.scene.name != copyToPrefab.scene.name)
@@ -351,24 +463,46 @@ namespace FACS01.Utilities
                         }
                         break;
                     }
-
                 case SerializedPropertyType.ManagedReference:
+                    {
+                        var to_prop = to.FindProperty(from_iterator.propertyPath);
+                        var from_mrv = from_iterator.managedReferenceValue;
+                        if (from_mrv == null)
+                        {
+                            if (to_prop.managedReferenceValue != null) to_prop.managedReferenceValue = null;
+                        }
+                        else
+                        {
+                            if (!ManagedReferenceCopies.TryGetValue(from_mrv, out var copy_obj))
+                            {
+                                var fromManagedType = from_mrv.GetType();
+                                if (fromManagedType.IsSubclassOf(typeof(UnityEngine.Object)))
+                                { copy_obj = Instantiate((UnityEngine.Object)from_mrv); }
+                                else
+                                {
+                                    var newObj = Activator.CreateInstance(fromManagedType);
+                                    copy_obj = newObj;
+                                }
+                                ManagedReferenceCopies[from_mrv] = copy_obj;
+                            }
+                            to_prop.managedReferenceValue = copy_obj;
+                            goto case SerializedPropertyType.Generic;
+                        }
+                        break;
+                    }
                 case SerializedPropertyType.Generic:
                     {
                         from_iterator.Next(true);
                         CopySerialized(from_iterator, to);
                         break;
                     }
-
                 case SerializedPropertyType.ExposedReference://do nothing
                     break;
                 default://all the rest just copy
                     {
                         var to_prop = to.FindProperty(from_iterator.propertyPath);
                         if (!SerializedProperty.DataEquals(from_iterator, to_prop))
-                        {
-                            to.CopyFromSerializedProperty(from_iterator);
-                        }
+                        { to.CopyFromSerializedProperty(from_iterator); }
                         break;
                     }
             }
@@ -386,22 +520,24 @@ namespace FACS01.Utilities
                 {
                     var t_from = pair.Key; var t_to = pair.Value;
                     var Cs_from = t_from.GetComponents(T); if (Cs_from.Length == 0) continue;
-                    var Cs_to = t_to != null ? t_to.GetComponents(T) : new Component[0];
+                    var Cs_to = t_to != null ? t_to.GetComponents(T) : null;
                     for (int i = 0; i < Cs_from.Length; i++)
                     {
                         var Cs_from_i = Cs_from[i];
+                        if (Cs_to == null) { C_Dictionary.Add(Cs_from_i, null); continue; }
                         var copy = CtoCopy != null && CtoCopy.Contains(Cs_from_i);
                         if (i < Cs_to.Length)
                         {
                             C_Dictionary.Add(Cs_from_i, Cs_to[i]);
+                            if (copy && !skipExistingComponents) L.Add(Cs_from_i);
                         }
-                        else if (copy)
+                        else if (copy && !onlyExistingComponents)
                         {
                             var newC = recordUndo ? Undo.AddComponent(t_to.gameObject, T) : t_to.gameObject.AddComponent(T);
                             C_Dictionary.Add(Cs_from_i, newC);
+                            L.Add(Cs_from_i);
                         }
                         else C_Dictionary.Add(Cs_from_i, null);
-                        if (copy) L.Add(Cs_from_i);
                     }
                 }
             }
@@ -415,79 +551,107 @@ namespace FACS01.Utilities
             var TTL = componentHierarchy.toggles_by_type[TransformType].toggleList;
             foreach (var toggle in TTL)
             {
-                if (!copiedOrigin && toggle.component.transform == copyFrom.transform)
+                if (toggle.state)
                 {
-                    copiedOrigin = true;
-                    if (toggle.state)
+                    var isDiffTType = EnforceTransform(toggle, out var t_from, out var t_to);
+                    if (!copiedOrigin && toggle.component.transform == copyFrom.transform)
                     {
-                        EnforceTransform(toggle, out var t_from, out var t_to);
+                        copiedOrigin = true;
+                        if (t_to == null ||
+                            (isDiffTType!=1 && skipExistingComponents) ||
+                            (isDiffTType==1 && onlyExistingComponents))
+                            continue;
                         t_to.localRotation = t_from.localRotation;
                         t_to.localEulerAngles = t_from.localEulerAngles;
                         t_to.localScale = t_from.localScale;
+                        anythingCopiedN++;
                     }
-                }
-                else if (toggle.state)
-                {
-                    EnforceTransform(toggle, out var t_from, out var t_to);
-                    CopyT(t_from, t_to);
+                    else
+                    {
+                        if (t_to == null ||
+                            (isDiffTType!=1 && skipExistingComponents) ||
+                            (isDiffTType==1 && onlyExistingComponents))
+                            continue;
+                        CopyT(t_from, t_to);
+                        anythingCopiedN++;
+                    }
                 }
             }
             if (componentHierarchy.toggles_by_type.TryGetValue(RectTransformType, out var RTTL))
             {
                 foreach (var toggle in RTTL.toggleList)
                 {
-                    if (!copiedOrigin && toggle.component.transform == copyFrom.transform)
+                    if (toggle.state)
                     {
-                        copiedOrigin = true;
-                        if (toggle.state)
+                        var isDiffTType = EnforceRectTransform(toggle, out var t_from, out var t_to);
+                        if (!copiedOrigin && toggle.component.transform == copyFrom.transform)
                         {
-                            EnforceRectTransform(toggle, out var t_from, out var t_to);
+                            copiedOrigin = true;
+                            if (t_to == null ||
+                                (isDiffTType!=1 && skipExistingComponents) ||
+                                (isDiffTType==1 && onlyExistingComponents))
+                                continue;
                             t_to.localRotation = t_from.localRotation;
                             t_to.localEulerAngles = t_from.localEulerAngles;
                             t_to.localScale = t_from.localScale;
                             CopyRT(t_from, t_to);
+                            anythingCopiedN++;
                         }
-                    }
-                    else if (toggle.state)
-                    {
-                        EnforceRectTransform(toggle, out var t_from, out var t_to);
-                        CopyT(t_from, t_to);
-                        CopyRT(t_from, t_to);
+                        else
+                        {
+                            if (t_to == null ||
+                                (isDiffTType!=1 && skipExistingComponents) ||
+                                (isDiffTType==1 && onlyExistingComponents))
+                                continue;
+                            CopyT(t_from, t_to);
+                            CopyRT(t_from, t_to);
+                            anythingCopiedN++;
+                        }
                     }
                 }
             }
         }
 
-        private static void EnforceTransform(ComponentHierarchy.ComponentToggle toggle, out Transform t_from, out Transform t_to)
+        private static sbyte EnforceTransform(ComponentHierarchy.ComponentToggle toggle, out Transform t_from, out Transform t_to, bool testOnly = false)
         {
             t_from = toggle.component.transform;
             t_to = GO_Dictionary[t_from];
+            if (t_to == null) return -1;
             if (t_to.GetType() == typeof(RectTransform))
             {
-                var go = t_to.gameObject;
-                if (recordUndo) Undo.DestroyObjectImmediate(t_to);
-                else DestroyImmediate(t_to);
-                t_to = go.transform;
-                GO_Dictionary[t_from] = t_to;
+                if (!onlyExistingComponents && !testOnly)
+                {
+                    var go = t_to.gameObject;
+                    if (recordUndo) Undo.DestroyObjectImmediate(t_to);
+                    else DestroyImmediate(t_to);
+                    t_to = go.transform;
+                    GO_Dictionary[t_from] = t_to;
+                }
+                return 1;
             }
-            else if (recordUndo) Undo.RecordObject(t_to, "Copy Components");
+            if (recordUndo && !testOnly) Undo.RecordObject(t_to, "Copy Components");
+            return 0;
         }
 
-        private static void EnforceRectTransform(ComponentHierarchy.ComponentToggle toggle, out RectTransform t_from, out RectTransform t_to)
+        private static sbyte EnforceRectTransform(ComponentHierarchy.ComponentToggle toggle, out RectTransform t_from, out RectTransform t_to, bool testOnly = false)
         {
+            t_to = null;
             t_from = (RectTransform)toggle.component;
             var t_t0 = GO_Dictionary[t_from];
+            if (t_t0 == null) return -1;
             if (t_t0 is RectTransform t_toRT)
             {
                 t_to = t_toRT;
-                if (recordUndo) Undo.RecordObject(t_to, "Copy Components");
+                if (recordUndo && !testOnly) Undo.RecordObject(t_to, "Copy Components");
+                return 0;
             }
-            else
+            if (!onlyExistingComponents)
             {
                 var go = t_t0.gameObject;
-                t_to = recordUndo ? Undo.AddComponent<RectTransform>(go) : go.AddComponent<RectTransform>();
+                if (!testOnly) t_to = recordUndo ? Undo.AddComponent<RectTransform>(go) : go.AddComponent<RectTransform>();
                 GO_Dictionary[t_from] = t_to;
             }
+            return 1;
         }
 
         private static void CopyT(Transform from, Transform to)
@@ -508,43 +672,159 @@ namespace FACS01.Utilities
             to.pivot = from.pivot;
         }
 
-        private void CreateMissingGOsAndSetEnables()
+        private int FilterSelectionGOs()
+        {
+            int toggledCount = 0;
+            foreach (var fh in componentHierarchy.GO_enables)
+            {
+                if (fh.unfolded) // folded used as marker. true => its needed to place some Components in hierarchy
+                {
+                    var from_t = fh.t;
+                    if (GO_Dictionary[from_t] == null)
+                    {
+                        if (onlyExistingPaths)
+                        {
+                            // deselect this GO, this Components, and all children GO and C
+                            toggledCount += fh.SetAllTogglesRecursive(false, true, true);
+                        }
+                        // else create GO
+                    }
+                    else if (skipExistingComponents && fh.GO_enable)
+                    {
+                        fh.GO_enable = false; toggledCount++;
+                    }
+                }
+            }
+            return toggledCount;
+        }
+
+        private int FilterSelectionTransforms()
+        {
+            int toggledCount = 0;
+            var TTL = componentHierarchy.toggles_by_type[TransformType].toggleList;
+            foreach (var toggle in TTL)
+            {
+                if (toggle.state)
+                {
+                    var isDiffTType = EnforceTransform(toggle, out var t_from, out var t_to, true);                    
+                    if ((isDiffTType==0 && skipExistingComponents) || (isDiffTType!=0 && onlyExistingComponents))
+                    {
+                        toggle.state = false;
+                        toggledCount++;
+                    }
+                }
+            }
+            if (componentHierarchy.toggles_by_type.TryGetValue(RectTransformType, out var RTTL))
+            {
+                foreach (var toggle in RTTL.toggleList)
+                {
+                    if (toggle.state)
+                    {
+                        var isDiffTType = EnforceRectTransform(toggle, out var t_from, out var t_to, true);
+                        if ((isDiffTType==0 && skipExistingComponents) || (isDiffTType!=0 && onlyExistingComponents))
+                        {
+                            toggle.state = false;
+                            toggledCount++;
+                        }
+                    }
+                }
+            }
+            return toggledCount;
+        }
+
+        private int FilterSelectionComponents()
+        {
+            int toggledCount = 0;
+            foreach (var T in componentHierarchy.toggles_by_type.Keys)
+            {
+                if (T == TransformType || T == RectTransformType) continue;
+                var CtoCopy = componentHierarchy.GetAllTogglesDict(T, 1);
+                foreach (var pair in GO_Dictionary)
+                {
+                    var t_from = pair.Key; var t_to = pair.Value;
+                    var Cs_from = t_from.GetComponents(T); if (Cs_from.Length == 0) continue;
+                    var Cs_to = t_to != null ? t_to.GetComponents(T) : null;
+                    for (int i = 0; i < Cs_from.Length; i++)
+                    {
+                        var Cs_from_i = Cs_from[i];
+                        if (CtoCopy != null && CtoCopy.TryGetValue(Cs_from_i, out var ct))
+                        {
+                            if (Cs_to == null) { if (onlyExistingComponents) { ct.state = false; toggledCount++; } }
+                            else if (i < Cs_to.Length)
+                            {
+                                if (skipExistingComponents) { ct.state = false; toggledCount++; }
+                            }
+                            else if (onlyExistingComponents)
+                            {
+                                ct.state = false; toggledCount++;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return toggledCount;
+        }
+
+        private void CreateMissingsAndCopyGOs()
         {
             foreach (var fh in componentHierarchy.GO_enables)
             {
-                if (fh.unfolded)
+                if (fh.unfolded) // folded used as marker. true => its needed to place some Components in hierarchy
                 {
                     var from_t = fh.t;
                     var go_from = from_t.gameObject;
                     if (GO_Dictionary[from_t] == null)
                     {
-                        var go_to = new GameObject(go_from.name);
-                        if (recordUndo) Undo.RegisterCreatedObjectUndo(go_to, "Copy Components");
-                        var new_t = go_to.transform;
-                        new_t.parent = GO_Dictionary[from_t.parent];
-                        CopyT(from_t, new_t);
+                        if (!onlyExistingPaths)
+                        {
+                            var go_to = new GameObject(go_from.name);
+                            if (recordUndo) Undo.RegisterCreatedObjectUndo(go_to, "Copy Components");
+                            var new_t = go_to.transform;
+                            new_t.parent = GO_Dictionary[from_t.parent];
+                            CopyT(from_t, new_t);
+                            if (fromFLB)
+                            {
+                                go_to.hideFlags = go_from.hideFlags & ~(HideFlags.DontSaveInEditor | HideFlags.DontSaveInBuild);
+                            }
+                            else
+                            {
+                                go_to.tag = go_from.tag;
+                                go_to.hideFlags = go_from.hideFlags;
+                            }
+                            go_to.layer = go_from.layer;
+                            go_to.SetActive(go_from.activeSelf);
 
-                        go_to.tag = go_from.tag;
-                        go_to.layer = go_from.layer;
-                        go_to.SetActive(go_from.activeSelf);
-
-                        GO_Dictionary[from_t] = new_t;
+                            GO_Dictionary[from_t] = new_t;
+                            anythingCopiedN++;
+                        }
                     }
-                    else if (fh.GO_enable)
+                    else if (!skipExistingComponents && fh.GO_enable)
                     {
                         var go_to = GO_Dictionary[from_t].gameObject;
                         if (recordUndo) Undo.RecordObject(go_to, "Copy Components");
+                        if (fromFLB)
+                        {
+                            go_to.hideFlags = go_from.hideFlags & ~(HideFlags.DontSaveInEditor | HideFlags.DontSaveInBuild);
+                        }
+                        else
+                        {
+                            go_to.tag = go_from.tag;
+                            go_to.hideFlags = go_from.hideFlags;
+                        }
+                        go_to.layer = go_from.layer;
                         go_to.SetActive(go_from.activeSelf);
+                        anythingCopiedN++;
                     }
                 }
             }
         }
 
-        private void GODictionary(Transform from, Transform to)
+        private Dictionary<Transform, Transform> GODictionary(Transform from, Transform to)
         {
             var TDict = new Dictionary<Transform, Transform>() { {from,to} };
             GODictionaryRecursive(TDict, from, to);
-            GO_Dictionary = TDict;
+            return TDict;
         }
 
         private void GODictionaryRecursive(Dictionary<Transform, Transform> dict, Transform from, Transform to)
@@ -564,10 +844,11 @@ namespace FACS01.Utilities
                 bool match = false;
                 for (int i = 0; i < toList.Count; i++)
                 {
-                    if (ch_from.name == toList[i].name)
+                    var ch_to = toList[i];
+                    if (ch_from.name == ch_to.name)
                     {
-                        dict.Add(ch_from, toList[i]); toList.RemoveAt(i); match = true;
-                        if (ch_from.childCount > 0) GODictionaryRecursive(dict, ch_from, dict[ch_from]);
+                        dict.Add(ch_from, ch_to); toList.RemoveAt(i); match = true;
+                        if (ch_from.childCount > 0) GODictionaryRecursive(dict, ch_from, ch_to);
                         break;
                     }
                 }
@@ -628,6 +909,11 @@ namespace FACS01.Utilities
             GO_Dictionary = null;
             C_Dictionary = null;
             copyMissing = 0;
+            selDepsRecursive = false;
+            skipExistingComponents = false;
+            onlyExistingComponents = false;
+            onlyExistingPaths = false;
+            anythingCopiedN = 0;
         }
 
         private void UnloadTempPrefab(GameObject go)
@@ -653,6 +939,7 @@ namespace FACS01.Utilities
             FacsGUIStyles = null;
             copyFromPrefab = null;
             copyToPrefab = null;
+            advancedFoldout = false;
             NullCompHierarchy();
         }
     }

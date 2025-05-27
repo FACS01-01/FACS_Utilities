@@ -29,9 +29,7 @@ namespace FACS01.Utilities
                 return _Button;
         }}
         public GUIStyle CenteredLabel
-        {
-            get
-            {
+        {get{
                 if (_CenteredLabel == null)
                     _CenteredLabel = new(EditorStyles.label)
                     {
@@ -40,8 +38,7 @@ namespace FACS01.Utilities
                         alignment = TextAnchor.MiddleCenter
                     };
                 return _CenteredLabel;
-            }
-        }
+        }}
         public GUIStyle DDB
         {get{
                 if (_DDB == null)

@@ -43,6 +43,7 @@ namespace FACS01.Utilities
                 using (var client = new HttpClient())
                 {
                     client.Timeout = new(0, 0, 5);
+                    client.DefaultRequestHeaders.CacheControl = new() { NoCache=true };
                     try
                     {
                         latestVersion = await client.GetStringAsync("https://raw.githubusercontent.com/FACS01-01/FACS_Utilities/main/version.txt");

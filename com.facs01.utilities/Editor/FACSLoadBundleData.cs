@@ -1,7 +1,6 @@
 #if UNITY_EDITOR
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -13,6 +12,7 @@ namespace FACS01.Utilities
     internal class FACSLoadBundleData : ScriptableSingleton<FACSLoadBundleData>
     {
         private const string RichToolName = Logger.ToolTag + "[FACS Load Bundle]" + Logger.EndTag;
+        internal const string FLBTag = "FACS01LB_";
         [SerializeField]
         internal List<LoadBundleEntry> LoadBundleEntries;
         
@@ -331,7 +331,7 @@ namespace FACS01.Utilities
                     lastBundleSource = ""; yield break;
                 }
 
-                bundleTag = "FACS01LB_"+System.Guid.NewGuid().ToString().Replace("-", "");
+                bundleTag = FLBTag + System.Guid.NewGuid().ToString().Replace("-", "");
                 UnityEditorInternal.InternalEditorUtility.AddTag(bundleTag);
                 isSceneBundle = loadedAssetBundle.isStreamedSceneAssetBundle;
                 if (isSceneBundle)
